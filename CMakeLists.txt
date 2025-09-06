@@ -28,3 +28,7 @@ target_link_libraries(e2e_chain_test PRIVATE lora_phy)
 # Allocation tracking test for modulate/demodulate
 add_executable(no_alloc_test tests/no_alloc_test.cpp)
 target_link_libraries(no_alloc_test PRIVATE lora_phy)
+
+# Performance timing test
+add_executable(performance_test tests/performance_test.cpp)
+target_link_libraries(performance_test PRIVATE lora_phy)
