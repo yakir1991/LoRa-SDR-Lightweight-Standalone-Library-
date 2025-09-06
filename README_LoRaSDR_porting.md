@@ -46,6 +46,14 @@
 - Freeze runs for configurations such as: **SF7 / SF9 / SF12 × CR 4/5..4/8 × SNR = 10 dB** (example).
 - Store outputs under `legacy_vectors/lorasdr_baseline/` with parameter manifests.
 
+**Prerequisites for baseline vector generation**:
+- C++ toolchain and CMake
+- Python 3.8 with packages: `numpy`, `pandas` (optional: `pyyaml`)
+- Environment variables:
+  - `LORASDR_ORIG` – path to original LoRa-SDR source (default `external/lorasdr_orig`)
+  - `LORASDR_BUILD` – build directory (default `<LORASDR_ORIG>/build`)
+
+
 **Deliverable**: a signed set of `.bin`/`.csv` vectors + per-vector parameter docs.
 
 ---
