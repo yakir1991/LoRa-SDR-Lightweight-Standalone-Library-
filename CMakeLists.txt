@@ -20,3 +20,7 @@ target_link_libraries(lora_phy_vector_dump PRIVATE lora_phy)
 # Bit exactness regression test
 add_executable(bit_exact_test tests/bit_exact_test.cpp)
 target_link_libraries(bit_exact_test PRIVATE lora_phy)
+
+# End-to-end encode/modulate/demodulate test
+add_executable(e2e_chain_test tests/e2e_chain_test.cpp)
+target_link_libraries(e2e_chain_test PRIVATE lora_phy)
