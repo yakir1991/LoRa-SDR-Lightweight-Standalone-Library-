@@ -24,7 +24,58 @@ from dataclasses import dataclass
 from typing import Iterable, List, Tuple
 
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+
+# ---------------------------------------------------------------------------
+# Profile loading
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class Profile:
+    name: str
+    sf: int
+    bw: int
+    cr: str
+
+
+def load_profiles(path: pathlib.Path) -> List[Profile]:
+    profiles: List[Profile] = []
+    current: dict = {}
+    with path.open() as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("-"):
+                if current:
+                    profiles.append(
+                        Profile(
+                            name=current.get("name", ""),
+                            sf=int(current.get("sf", 0)),
+                            bw=int(current.get("bw", 0)),
+                            cr=current.get("cr", ""),
+                        )
+                    )
+                current = {}
+                continue
+            if ":" not in line:
+                continue
+            key, val = [x.strip() for x in line.split(":", 1)]
+            current[key] = val
+    if current:
+        profiles.append(
+            Profile(
+                name=current.get("name", ""),
+                sf=int(current.get("sf", 0)),
+                bw=int(current.get("bw", 0)),
+                cr=current.get("cr", ""),
+            )
+        )
+    return profiles
 
 
 # ---------------------------------------------------------------------------
@@ -252,33 +303,34 @@ def main() -> None:
     out_dir = pathlib.Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    fieldnames = ["sf", "cr", "snr_db", "ber", "per"]
+    profiles = load_profiles(pathlib.Path(__file__).resolve().parent / "profiles.yaml")
+
+    fieldnames = ["sf", "bw", "cr", "snr_db", "ber", "per"]
     rows: List[dict] = []
 
-    for sf in (7, 9, 12):
-        up, down = make_chirps(sf)
-        for cr in ("4/5", "4/8"):
-            snrs = np.arange(args.snr_start, args.snr_stop + 1e-9, args.snr_step)
-            bers: List[float] = []
-            pers: List[float] = []
-            for snr in snrs:
-                ber, per = simulate(sf, cr, snr, args.packets, args.payload_bytes, up, down)
-                rows.append({"sf": sf, "cr": cr, "snr_db": snr, "ber": ber, "per": per})
-                bers.append(ber)
-                pers.append(per)
+    for p in profiles:
+        up, down = make_chirps(p.sf)
+        snrs = np.arange(args.snr_start, args.snr_stop + 1e-9, args.snr_step)
+        bers: List[float] = []
+        pers: List[float] = []
+        for snr in snrs:
+            ber, per = simulate(p.sf, p.cr, snr, args.packets, args.payload_bytes, up, down)
+            rows.append({"sf": p.sf, "bw": p.bw, "cr": p.cr, "snr_db": snr, "ber": ber, "per": per})
+            bers.append(ber)
+            pers.append(per)
 
-            # Emit plot for this configuration
-            plt.figure()
-            plt.semilogy(snrs, bers, label="BER")
-            plt.semilogy(snrs, pers, label="PER")
-            plt.xlabel("SNR (dB)")
-            plt.ylabel("Error rate")
-            plt.title(f"SF{sf} CR{cr}")
-            plt.grid(True, which="both")
-            plt.legend()
-            plt.tight_layout()
-            plt.savefig(out_dir / f"sf{sf}_cr{cr.replace('/', '')}.png")
-            plt.close()
+        # Emit plot for this configuration
+        plt.figure()
+        plt.semilogy(snrs, bers, label="BER")
+        plt.semilogy(snrs, pers, label="PER")
+        plt.xlabel("SNR (dB)")
+        plt.ylabel("Error rate")
+        plt.title(f"SF{p.sf} BW{p.bw/1000:.0f}k CR{p.cr}")
+        plt.grid(True, which="both")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(out_dir / f"{p.name}.png")
+        plt.close()
 
     # Write CSV
     csv_path = out_dir / "awgn_sweep.csv"
