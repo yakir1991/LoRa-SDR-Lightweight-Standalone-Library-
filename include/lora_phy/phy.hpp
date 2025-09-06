@@ -102,6 +102,22 @@ ssize_t demodulate(lora_workspace* ws,
                    const std::complex<float>* iq, size_t sample_count,
                    uint16_t* symbols, size_t symbol_cap);
 
+/** Analyse @p samples to estimate carrier frequency and timing offsets.
+ * The input must contain a whole number of symbols and typically points to
+ * preamble upchirps.  Estimated values are written to ``ws->metrics``.
+ */
+void estimate_offsets(lora_workspace* ws,
+                      const std::complex<float>* samples,
+                      size_t sample_count);
+
+/** Apply frequency and timing compensation to @p samples in-place using the
+ * offsets stored in ``ws->metrics``.  Each sample is rotated by the negative
+ * CFO and shifted in time by ``time_offset`` before further processing.
+ */
+void compensate_offsets(const lora_workspace* ws,
+                        std::complex<float>* samples,
+                        size_t sample_count);
+
 /** Obtain metrics from the last decode or demodulate call.  The returned
  * pointer refers to memory inside @p ws and must not be freed by the caller. */
 const lora_metrics* get_last_metrics(const lora_workspace* ws);
@@ -125,6 +141,7 @@ struct lora_demod_workspace {
     kissfft_plan<float> fft_plan{}; // preallocated plan for kissfft
     kissfft<float>* fft{};          // fft instance using the plan
     LoRaDetector<float>* detector{};
+    lora_metrics metrics{};         ///< estimated metrics for last demod
 };
 
 // Initialise and clean up the demodulator workspace.
