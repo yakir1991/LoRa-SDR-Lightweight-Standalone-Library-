@@ -10,6 +10,8 @@
 struct Profile {
     std::string name;
     unsigned sf{};
+    unsigned bw{};
+    std::string cr;
     std::string dir;
 };
 
@@ -41,6 +43,8 @@ static bool load_profiles(const std::string& path, std::vector<Profile>& out) {
         std::string val = trim(line.substr(colon + 1));
         if (key == "name") current.name = val;
         else if (key == "sf") current.sf = static_cast<unsigned>(std::stoul(val));
+        else if (key == "bw") current.bw = static_cast<unsigned>(std::stoul(val));
+        else if (key == "cr") current.cr = val;
         else if (key == "dir") current.dir = val;
     }
     if (in_profile) out.push_back(current);
@@ -80,6 +84,11 @@ int main() {
     }
     bool ok = true;
     for (const auto& p : profiles) {
+        if (p.dir.empty()) {
+            std::cout << "Skipping profile " << p.name
+                      << " (no vector directory)" << std::endl;
+            continue;
+        }
         std::vector<std::complex<float>> samples;
         if (!load_iq_samples(p.dir + "/iq_samples.csv", samples)) {
             std::cerr << "Failed to load IQ samples for profile " << p.name << "\n";

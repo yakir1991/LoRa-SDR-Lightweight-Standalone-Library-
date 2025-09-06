@@ -10,7 +10,9 @@
 struct Profile {
     std::string name;
     unsigned sf{};
-    std::string dir; // unused but parsed for compatibility
+    unsigned bw{};
+    std::string cr;
+    std::string dir; // optional
 };
 
 static std::string trim(const std::string& s) {
@@ -41,6 +43,8 @@ static bool load_profiles(const std::string& path, std::vector<Profile>& out) {
         std::string val = trim(line.substr(colon + 1));
         if (key == "name") current.name = val;
         else if (key == "sf") current.sf = static_cast<unsigned>(std::stoul(val));
+        else if (key == "bw") current.bw = static_cast<unsigned>(std::stoul(val));
+        else if (key == "cr") current.cr = val;
         else if (key == "dir") current.dir = val;
     }
     if (in_profile) out.push_back(current);

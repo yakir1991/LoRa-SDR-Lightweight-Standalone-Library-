@@ -1,4 +1,19 @@
-- 
-  name: sf7
+# Representative LoRa profiles used by tests
+# Fields: name, sf (spreading factor), bw (Hz), cr (coding rate),
+# and optional dir for vector data.
+-
+  name: sf7_bw125_cr45
   sf: 7
+  bw: 125000
+  cr: 4/5
   dir: vectors/lora_phy_baseline/sf7
+-
+  name: sf9_bw250_cr48
+  sf: 9
+  bw: 250000
+  cr: 4/8
+-
+  name: sf12_bw500_cr45
+  sf: 12
+  bw: 500000
+  cr: 4/5
