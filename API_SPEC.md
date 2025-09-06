@@ -91,3 +91,9 @@ All input and output buffers are owned by the caller.  The library reads from or
 writes to them only for the duration of the call.  No asynchronous callbacks are
 involved; errors are reported solely through return codes.
 
+## Numeric conventions
+
+See `SEMANTIC_COMPATIBILITY.md` for sample scaling, bit ordering and other
+semantic requirements needed for vector compatibility with the reference
+implementation.
+
