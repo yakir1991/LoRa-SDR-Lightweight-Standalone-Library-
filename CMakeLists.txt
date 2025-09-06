@@ -21,6 +21,10 @@ target_link_libraries(lora_phy_vector_dump PRIVATE lora_phy)
 add_executable(tx_runner runners/tx_runner.cpp)
 target_link_libraries(tx_runner PRIVATE lora_phy)
 
+# Receive runner converting IQ samples back into payload bytes
+add_executable(rx_runner runners/rx_runner.cpp)
+target_link_libraries(rx_runner PRIVATE lora_phy)
+
 # Bit exactness regression test
 add_executable(bit_exact_test tests/bit_exact_test.cpp)
 target_link_libraries(bit_exact_test PRIVATE lora_phy)
