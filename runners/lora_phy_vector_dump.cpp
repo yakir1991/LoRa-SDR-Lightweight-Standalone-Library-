@@ -1,100 +1,132 @@
 #include <lora_phy/phy.hpp>
 #include <lora_phy/LoRaCodes.hpp>
-#include <vector>
+
 #include <complex>
-#include <fstream>
-#include <random>
-#include <iostream>
 #include <cstdint>
-#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <random>
 #include <set>
 #include <string>
+#include <vector>
 
-/*
- * Dump internal LoRa PHY vectors for use in tests.
- *
- * Supported dump states and their file formats:
- *   payload          -> payload.bin (raw bytes)
- *   pre_interleave   -> pre_interleave.csv (decimal codewords per line)
- *   post_interleave  -> post_interleave.csv (decimal symbols per line)
- *   iq               -> iq_samples.csv ("real,imag" per line)
- *   demod            -> demod_symbols.csv (decimal symbols per line)
- *   deinterleave     -> deinterleave.csv (decimal codewords per line)
- *   decoded          -> decoded.bin (raw bytes)
- */
+using namespace lora_phy;
+
+namespace {
+
+void usage(const char* prog) {
+    std::cerr << "Usage: " << prog
+              << " --out=DIR [--sf=N] [--bytes=N] [--seed=N]"
+              << " [--dump=STAGE,...]\n";
+}
+
+} // namespace
+
 int main(int argc, char** argv) {
     unsigned sf = 7;
-    unsigned seed = 0;
+    unsigned seed = 1;
     size_t byte_count = 16;
-    const char* out_dir = nullptr;
+    std::string out_dir;
     std::set<std::string> dumps;
 
     for (int i = 1; i < argc; ++i) {
-        const char* arg = argv[i];
-        if (std::strncmp(arg, "--sf=", 5) == 0) sf = std::stoul(arg + 5);
-        else if (std::strncmp(arg, "--seed=", 7) == 0) seed = std::stoul(arg + 7);
-        else if (std::strncmp(arg, "--bytes=", 8) == 0) byte_count = std::stoul(arg + 8);
-        else if (std::strncmp(arg, "--out=", 6) == 0) out_dir = arg + 6;
-        else if (std::strncmp(arg, "--dump=", 7) == 0) dumps.insert(arg + 7);
-        else {
-            std::cerr << "Unknown argument: " << arg << std::endl;
+        std::string arg = argv[i];
+        if (arg.rfind("--sf=", 0) == 0) {
+            sf = static_cast<unsigned>(std::stoul(arg.substr(5)));
+        } else if (arg.rfind("--seed=", 0) == 0) {
+            seed = static_cast<unsigned>(std::stoul(arg.substr(7)));
+        } else if (arg.rfind("--bytes=", 0) == 0) {
+            byte_count = static_cast<size_t>(std::stoul(arg.substr(8)));
+        } else if (arg.rfind("--out=", 0) == 0) {
+            out_dir = arg.substr(6);
+        } else if (arg.rfind("--dump=", 0) == 0) {
+            dumps.insert(arg.substr(7));
+        } else if (arg == "--help" || arg == "-h") {
+            usage(argv[0]);
+            return 0;
+        } else {
+            std::cerr << "Unknown argument: " << arg << "\n";
+            usage(argv[0]);
             return 1;
         }
     }
 
-    if (!out_dir) {
-        std::cerr << "--out argument is required" << std::endl;
+    if (out_dir.empty()) {
+        usage(argv[0]);
         return 1;
     }
 
     if (dumps.empty()) {
-        dumps.insert("payload");
-        dumps.insert("pre_interleave");
-        dumps.insert("post_interleave");
-        dumps.insert("iq");
-        dumps.insert("demod");
-        dumps.insert("deinterleave");
-        dumps.insert("decoded");
+        dumps = {"payload",      "pre_interleave", "post_interleave",
+                 "iq",           "demod",          "deinterleave",
+                 "decoded"};
     }
 
     std::mt19937 rng(seed);
     std::uniform_int_distribution<int> dist(0, 255);
     std::vector<uint8_t> payload(byte_count);
-    for (size_t i = 0; i < byte_count; i++) payload[i] = static_cast<uint8_t>(dist(rng));
+    for (size_t i = 0; i < byte_count; ++i)
+        payload[i] = static_cast<uint8_t>(dist(rng));
 
-    // Encode into codewords (pre-interleave)
     const size_t nibble_count = byte_count * 2;
-    const size_t cw_count = ((nibble_count + sf - 1) / sf) * sf; // round up to multiple of sf
-    std::vector<uint8_t> pre_interleave(cw_count, 0);
-    for (size_t i = 0; i < nibble_count; i++) {
-        const uint8_t byte = payload[i / 2];
-        const uint8_t nibble = (i & 1) ? (byte & 0x0f) : (byte >> 4);
-        pre_interleave[i] = encodeHamming84sx(nibble);
-    }
-
-    // Interleave into symbols
-    const size_t rdd = 4; // typical redundancy
+    const size_t cw_count = ((nibble_count + sf - 1) / sf) * sf;
+    const size_t rdd = 4;
     const size_t blocks = cw_count / sf;
     const size_t symbol_count = blocks * (4 + rdd);
-    std::vector<uint16_t> post_interleave(symbol_count, 0);
-    diagonalInterleaveSx(pre_interleave.data(), cw_count, post_interleave.data(), sf, rdd);
+    const size_t N = size_t(1) << sf;
 
-    const size_t samples_per_symbol = 1u << sf;
-    std::vector<std::complex<float>> samples(symbol_count * samples_per_symbol);
-    size_t sample_count = lora_phy::lora_modulate(post_interleave.data(), symbol_count, samples.data(), sf);
+    std::vector<uint8_t> pre_interleave(cw_count, 0);
+    for (size_t i = 0; i < nibble_count; ++i) {
+        uint8_t b = payload[i / 2];
+        uint8_t nib = (i & 1) ? (b & 0x0f) : (b >> 4);
+        pre_interleave[i] = encodeHamming84sx(nib);
+    }
 
+    std::vector<uint16_t> post_interleave(symbol_count);
     std::vector<uint16_t> demod(symbol_count);
-    lora_phy::lora_demod_workspace demod_ws{};
-    lora_phy::lora_demod_init(&demod_ws, sf);
-    lora_phy::lora_demodulate(&demod_ws, samples.data(), sample_count, demod.data());
-    lora_phy::lora_demod_free(&demod_ws);
-
-    // Deinterleave and decode
     std::vector<uint8_t> deinterleave(cw_count, 0);
-    diagonalDeterleaveSx(demod.data(), symbol_count, deinterleave.data(), sf, rdd);
-
     std::vector<uint8_t> decoded(byte_count);
-    for (size_t i = 0; i < byte_count; i++) {
+    std::vector<std::complex<float>> fft_in(N), fft_out(N);
+    std::vector<std::complex<float>> samples(symbol_count * N);
+
+    lora_workspace ws{};
+    ws.symbol_buf = post_interleave.data();
+    ws.fft_in = fft_in.data();
+    ws.fft_out = fft_out.data();
+    lora_params params{};
+    params.sf = sf;
+    params.bw = 0;
+    params.cr = 0;
+    if (init(&ws, &params) != 0) {
+        std::cerr << "Failed to initialise workspace\n";
+        return 1;
+    }
+
+    ssize_t produced = encode(&ws, payload.data(), payload.size(),
+                              post_interleave.data(), post_interleave.size());
+    if (produced < 0) {
+        std::cerr << "encode() failed\n";
+        return 1;
+    }
+
+    ssize_t sample_count = modulate(&ws, post_interleave.data(), produced,
+                                    samples.data(), samples.size());
+    if (sample_count < 0) {
+        std::cerr << "modulate() failed\n";
+        return 1;
+    }
+
+    ssize_t demod_syms = demodulate(&ws, samples.data(), sample_count,
+                                    demod.data(), demod.size());
+    if (demod_syms < 0) {
+        std::cerr << "demodulate() failed\n";
+        return 1;
+    }
+
+    diagonalDeterleaveSx(demod.data(), symbol_count, deinterleave.data(), sf,
+                         rdd);
+
+    for (size_t i = 0; i < byte_count; ++i) {
         bool err = false, bad = false;
         uint8_t hi = decodeHamming84sx(deinterleave[2 * i], err, bad) & 0x0f;
         err = bad = false;
@@ -102,48 +134,43 @@ int main(int argc, char** argv) {
         decoded[i] = static_cast<uint8_t>((hi << 4) | lo);
     }
 
-    std::string base(out_dir);
     std::ofstream f;
 
     if (dumps.count("payload")) {
-        f.open(base + "/payload.bin", std::ios::binary);
+        f.open(out_dir + "/payload.bin", std::ios::binary);
         f.write(reinterpret_cast<const char*>(payload.data()), payload.size());
         f.close();
     }
-
     if (dumps.count("pre_interleave")) {
-        f.open(base + "/pre_interleave.csv");
-        for (size_t i = 0; i < cw_count; i++) f << static_cast<unsigned>(pre_interleave[i]) << "\n";
+        f.open(out_dir + "/pre_interleave.csv");
+        for (size_t i = 0; i < cw_count; ++i)
+            f << static_cast<unsigned>(pre_interleave[i]) << "\n";
         f.close();
     }
-
     if (dumps.count("post_interleave")) {
-        f.open(base + "/post_interleave.csv");
-        for (size_t i = 0; i < symbol_count; i++) f << post_interleave[i] << "\n";
+        f.open(out_dir + "/post_interleave.csv");
+        for (size_t i = 0; i < symbol_count; ++i) f << post_interleave[i] << "\n";
         f.close();
     }
-
     if (dumps.count("iq")) {
-        f.open(base + "/iq_samples.csv");
-        for (size_t i = 0; i < sample_count; i++)
+        f.open(out_dir + "/iq_samples.csv");
+        for (ssize_t i = 0; i < sample_count; ++i)
             f << samples[i].real() << "," << samples[i].imag() << "\n";
         f.close();
     }
-
     if (dumps.count("demod")) {
-        f.open(base + "/demod_symbols.csv");
-        for (size_t i = 0; i < symbol_count; i++) f << demod[i] << "\n";
+        f.open(out_dir + "/demod_symbols.csv");
+        for (size_t i = 0; i < symbol_count; ++i) f << demod[i] << "\n";
         f.close();
     }
-
     if (dumps.count("deinterleave")) {
-        f.open(base + "/deinterleave.csv");
-        for (size_t i = 0; i < cw_count; i++) f << static_cast<unsigned>(deinterleave[i]) << "\n";
+        f.open(out_dir + "/deinterleave.csv");
+        for (size_t i = 0; i < cw_count; ++i)
+            f << static_cast<unsigned>(deinterleave[i]) << "\n";
         f.close();
     }
-
     if (dumps.count("decoded")) {
-        f.open(base + "/decoded.bin", std::ios::binary);
+        f.open(out_dir + "/decoded.bin", std::ios::binary);
         f.write(reinterpret_cast<const char*>(decoded.data()), decoded.size());
         f.close();
     }
