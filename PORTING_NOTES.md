@@ -33,3 +33,17 @@ These files remain in the legacy portion and will not be ported to the core libr
 - `TestDetector.cpp`
 - `TestLoopback.cpp`
 
+## Files to extract
+
+| Path | Allocation |
+| --- | --- |
+| `LoRaMod.cpp` | Runtime |
+| `LoRaDemod.cpp` | Init + runtime |
+| `LoRaEncoder.cpp` | Runtime |
+| `LoRaDecoder.cpp` | Runtime |
+| `ChirpGenerator.hpp` | None |
+| `LoRaDetector.hpp` | Initialization only |
+| `LoRaCodes.hpp` | None |
+| `kissfft.hh` | Initialization only |
+| `TestCodesSx.cpp` | Runtime |
+
