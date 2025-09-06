@@ -3,6 +3,13 @@
 ## Purpose and Scope
 The test suite validates the LoRa PHY library for bit accuracy, end-to-end modulation/demodulation, error-rate behaviour and performance.  It ensures typical LoRa profiles work and checks for dynamic allocations.
 
+## Prerequisites
+Ensure the following tools and libraries are available before running the tests:
+
+* A C++11 compiler and [CMake](https://cmake.org) 3.5 or later.
+* Python 3 with the `numpy` and `matplotlib` packages for running the AWGN sweep script.
+* Generated reference vectors (see below) for the bit-exact regression test.
+
 ## Generating Reference Vectors
 Deterministic vectors are required for regression tests.  Generate them after
 building the project:
