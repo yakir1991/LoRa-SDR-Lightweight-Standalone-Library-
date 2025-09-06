@@ -1,5 +1,14 @@
+#pragma once
+
 #include <cstddef>
 #include <cstdint>
+
+/*
+ * Miscellaneous encoding helpers and checksum routines used by the LoRa PHY.
+ * All functions operate on caller supplied buffers and perform transformations
+ * in place.  No dynamic memory is allocated and the caller retains ownership of
+ * all buffers passed in.
+ */
 
 /***********************************************************************
  * Defines

@@ -6,7 +6,10 @@
 #include <cmath>
 
 /*!
- * Generate a chirp
+ * Generate a chirp into a caller supplied buffer.  `samps` must reference at
+ * least `NN` elements; the function writes the generated complex samples but
+ * never allocates or frees memory.  All buffers remain owned by the caller.
+ *
  * \param [out] samps pointer to the output samples
  * \param N samples per chirp sans the oversampling
  * \param ovs the oversampling size
