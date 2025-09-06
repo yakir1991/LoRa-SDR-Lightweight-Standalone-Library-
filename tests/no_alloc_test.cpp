@@ -16,7 +16,7 @@ int main() {
 
     {
         alloc_tracker::Guard guard;
-        lora_phy::lora_modulate(symbols.data(), symbol_count, samples.data(), sf);
+        lora_phy::lora_modulate(symbols.data(), symbol_count, samples.data(), sf, 1);
         if (guard.count() != 0) {
             std::cerr << "Allocation occurred in modulate" << std::endl;
             return 1;
@@ -29,7 +29,7 @@ int main() {
 
     {
         alloc_tracker::Guard guard;
-        lora_phy::lora_demodulate(&ws, samples.data(), sample_count, demod.data());
+        lora_phy::lora_demodulate(&ws, samples.data(), sample_count, demod.data(), 1);
         if (guard.count() != 0) {
             std::cerr << "Allocation occurred in demodulate" << std::endl;
             lora_phy::lora_demod_free(&ws);

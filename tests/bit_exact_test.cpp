@@ -113,7 +113,7 @@ int main() {
         std::vector<uint16_t> demod(symbol_count);
         lora_phy::lora_demod_workspace ws{};
         lora_phy::lora_demod_init(&ws, p.sf);
-        lora_phy::lora_demodulate(&ws, samples.data(), sample_count, demod.data());
+        lora_phy::lora_demodulate(&ws, samples.data(), sample_count, demod.data(), 1);
         lora_phy::lora_demod_free(&ws);
         std::vector<uint8_t> decoded(expected.size());
         lora_phy::lora_decode(demod.data(), symbol_count, decoded.data());

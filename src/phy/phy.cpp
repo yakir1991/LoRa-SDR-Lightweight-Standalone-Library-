@@ -17,6 +17,10 @@ static unsigned deduce_sf(const lora_workspace* ws) {
     return sf;
 }
 
+static unsigned get_osr(const lora_workspace* ws) {
+    return ws->osr ? ws->osr : 1u;
+}
+
 } // namespace
 
 int init(lora_workspace* ws, const lora_params* cfg) {
@@ -25,6 +29,7 @@ int init(lora_workspace* ws, const lora_params* cfg) {
     kissfft<float>::init(ws->plan_fwd, N, false);
     kissfft<float>::init(ws->plan_inv, N, true);
     ws->metrics = {};
+    ws->osr = cfg->osr ? cfg->osr : 1u;
     return 0;
 }
 
@@ -47,7 +52,8 @@ ssize_t modulate(lora_workspace* ws,
                  std::complex<float>* iq, size_t iq_cap) {
     if (!ws || !symbols || !iq) return -1;
     unsigned sf = deduce_sf(ws);
-    size_t produced = lora_modulate(symbols, symbol_count, iq, sf);
+    unsigned osr = get_osr(ws);
+    size_t produced = lora_modulate(symbols, symbol_count, iq, sf, osr);
     if (produced > iq_cap) return -1;
     return static_cast<ssize_t>(produced);
 }
@@ -57,8 +63,10 @@ void estimate_offsets(lora_workspace* ws,
                       size_t sample_count) {
     if (!ws || !samples || sample_count == 0) return;
     unsigned sf = deduce_sf(ws);
+    unsigned osr = get_osr(ws);
     size_t N = size_t(1) << sf;
-    size_t symbols = sample_count / N;
+    size_t step = N * osr;
+    size_t symbols = sample_count / step;
     if (symbols == 0) return;
 
     kissfft<float> fft(ws->plan_fwd);
@@ -68,14 +76,30 @@ void estimate_offsets(lora_workspace* ws,
     float phase_diff = 0.0f;
     float prev_phase = 0.0f;
     bool have_prev = false;
+    unsigned sum_t = 0;
     for (size_t s = 0; s < symbols; ++s) {
-        const std::complex<float>* sym = samples + s * N;
-        for (size_t i = 0; i < N; ++i) detector.feed(i, sym[i]);
-        float p, pav, findex;
-        size_t idx = detector.detect(p, pav, findex);
-        sum_index += static_cast<float>(idx) + findex;
-        std::complex<float> bin = ws->fft_out[idx];
-        float phase = std::arg(bin);
+        const std::complex<float>* sym = samples + s * step;
+        float best_p = -1e30f;
+        size_t best_idx = 0;
+        float best_f = 0.0f;
+        unsigned best_t = 0;
+        std::complex<float> best_bin;
+        for (unsigned t = 0; t < osr; ++t) {
+            for (size_t i = 0; i < N; ++i)
+                detector.feed(i, sym[t + i * osr]);
+            float p, pav, findex;
+            size_t idx = detector.detect(p, pav, findex);
+            if (p > best_p) {
+                best_p = p;
+                best_idx = idx;
+                best_f = findex;
+                best_t = t;
+                best_bin = ws->fft_out[idx];
+            }
+        }
+        sum_t += best_t;
+        sum_index += static_cast<float>(best_idx) + best_f;
+        float phase = std::arg(best_bin);
         if (have_prev) {
             float d = phase - prev_phase;
             while (d > float(M_PI)) d -= 2.0f * float(M_PI);
@@ -94,7 +118,9 @@ void estimate_offsets(lora_workspace* ws,
                    (2.0f * float(M_PI) * static_cast<float>(N));
     ws->metrics.cfo = cfo_coarse + cfo_fine;
     float frac = avg_index - std::floor(avg_index + 0.5f);
-    ws->metrics.time_offset = -frac * static_cast<float>(N);
+    float avg_t = static_cast<float>(sum_t) / static_cast<float>(symbols);
+    ws->metrics.time_offset = avg_t -
+                              frac * static_cast<float>(N) * static_cast<float>(osr);
 }
 
 void compensate_offsets(const lora_workspace* ws,
@@ -102,11 +128,13 @@ void compensate_offsets(const lora_workspace* ws,
                         size_t sample_count) {
     if (!ws || !samples || sample_count == 0) return;
     unsigned sf = deduce_sf(ws);
+    unsigned osr = get_osr(ws);
     size_t N = size_t(1) << sf;
     float cfo = ws->metrics.cfo;
     float to = ws->metrics.time_offset;
+    float rate = -2.0f * float(M_PI) * cfo / (static_cast<float>(N) * static_cast<float>(osr));
     for (size_t n = 0; n < sample_count; ++n) {
-        float ph = -2.0f * float(M_PI) * cfo * (static_cast<float>(n) / static_cast<float>(N));
+        float ph = rate * static_cast<float>(n);
         float cs = std::cos(ph);
         float sn = std::sin(ph);
         samples[n] *= std::complex<float>(cs, sn);
@@ -131,12 +159,14 @@ ssize_t demodulate(lora_workspace* ws,
                    uint16_t* symbols, size_t symbol_cap) {
     if (!ws || !iq || !symbols) return -1;
     unsigned sf = deduce_sf(ws);
+    unsigned osr = get_osr(ws);
     size_t N = size_t(1) << sf;
-    if (sample_count % N != 0) return -1;
-    size_t num_symbols = sample_count / N;
+    size_t step = N * osr;
+    if (sample_count % step != 0) return -1;
+    size_t num_symbols = sample_count / step;
     if (num_symbols > symbol_cap) return -1;
 
-    size_t est_samples = std::min(sample_count, N * size_t(2));
+    size_t est_samples = std::min(sample_count, step * size_t(2));
     estimate_offsets(ws, iq, est_samples);
 
     kissfft<float> fft(ws->plan_fwd);
@@ -147,21 +177,22 @@ ssize_t demodulate(lora_workspace* ws,
         float tmp = 0.0f;
         genChirp(ws->fft_out, static_cast<int>(N), 1, static_cast<int>(N),
                  0.0f, true, 1.0f, tmp);
-        size_t base = s * N;
+        size_t base = s * step;
         if (t_off > 0) {
-            if (base + size_t(t_off) + N <= sample_count)
+            if (base + size_t(t_off) + step <= sample_count)
                 base += size_t(t_off);
         } else if (t_off < 0) {
             size_t off = size_t(-t_off);
             if (off <= base) base -= off;
         }
         const std::complex<float>* sym = iq + base;
-        float start = rate * static_cast<float>(s * N);
+        float start = rate * (static_cast<float>(s * N) +
+                               static_cast<float>(t_off) / static_cast<float>(osr));
         for (size_t i = 0; i < N; ++i) {
             float ph = start + rate * static_cast<float>(i);
             float cs = std::cos(ph);
             float sn = std::sin(ph);
-            detector.feed(i, sym[i] * ws->fft_out[i] * std::complex<float>(cs, sn));
+            detector.feed(i, sym[i * osr] * ws->fft_out[i] * std::complex<float>(cs, sn));
         }
         float p, pav, findex;
         size_t idx = detector.detect(p, pav, findex);

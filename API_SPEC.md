@@ -14,13 +14,14 @@ struct lora_workspace {
     /* preallocated by caller */
     uint16_t     *symbol_buf;    /* N entries */
     float complex *fft_in;       /* N samples */
-    float complex *fft_out;      /* N samples */
+    float complex *fft_out;      /* N*osr samples */
 
     /* initialized by init() */
     kissfft_plan  plan_fwd;
     kissfft_plan  plan_inv;
 
     struct lora_metrics metrics; /* updated by processing functions */
+    unsigned       osr;          /* oversampling ratio */
 };
 ```
 
@@ -37,7 +38,7 @@ number of elements written when successful.
 Initializes the workspace for a given set of parameters.
 
 * `ws` – workspace to populate. Must reference valid buffers.
-* `cfg` – modulation and coding parameters (spread factor, coding rate, etc.).
+* `cfg` – modulation and coding parameters (spread factor, coding rate, oversampling, etc.).
 * Returns `0` on success or `-EINVAL` if parameters are invalid.
 
 ### `void reset(struct lora_workspace *ws);`
@@ -63,20 +64,20 @@ Decodes a block of symbols into payload bytes.
 * Returns number of bytes written or a negative error code on CRC/format error.
 
 ### `ssize_t modulate(struct lora_workspace *ws,
-                       const uint16_t *symbols, size_t symbol_count,
-                       float complex *iq, size_t iq_cap);`
+                      const uint16_t *symbols, size_t symbol_count,
+                      float complex *iq, size_t iq_cap);`
 Generates complex time‑domain samples from symbols.
 
 * `symbols` – input symbols.
-* `iq` – caller supplied buffer for `symbol_count * (1<<sf)` samples.
+* `iq` – caller supplied buffer for `symbol_count * (1<<sf) * osr` samples.
 * Returns samples written or `-ERANGE` if the buffer is insufficient.
 
 ### `ssize_t demodulate(struct lora_workspace *ws,
-                         const float complex *iq, size_t sample_count,
-                         uint16_t *symbols, size_t symbol_cap);`
+                        const float complex *iq, size_t sample_count,
+                        uint16_t *symbols, size_t symbol_cap);`
 Demodulates IQ samples into decided symbols using the workspace FFT plans.
 
-* `iq` – input samples; length must be a multiple of symbol size.
+* `iq` – input samples; length must be a multiple of `(1<<sf) * osr`.
 * `symbols` – output buffer for decoded symbols.
 * Returns number of symbols produced or negative error on invalid sizes.
 

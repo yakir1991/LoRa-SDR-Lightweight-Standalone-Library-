@@ -73,7 +73,7 @@ int main() {
         const size_t samples_per_symbol = 1u << p.sf;
         const size_t sample_count = symbol_count * samples_per_symbol;
         std::vector<std::complex<float>> samples(sample_count);
-        lora_phy::lora_modulate(symbols.data(), symbol_count, samples.data(), p.sf);
+        lora_phy::lora_modulate(symbols.data(), symbol_count, samples.data(), p.sf, 1);
 
         // dechirp the samples before demodulation
         std::vector<std::complex<float>> dechirped(sample_count);
@@ -92,7 +92,7 @@ int main() {
         std::vector<uint16_t> demod(symbol_count);
         lora_phy::lora_demod_workspace ws{};
         lora_phy::lora_demod_init(&ws, p.sf);
-        lora_phy::lora_demodulate(&ws, dechirped.data(), sample_count, demod.data());
+        lora_phy::lora_demodulate(&ws, dechirped.data(), sample_count, demod.data(), 1);
         lora_phy::lora_demod_free(&ws);
 
         // decode symbols back to bytes
