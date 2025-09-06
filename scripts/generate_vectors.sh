@@ -1,25 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BUILD_DIR=${BUILD_DIR:-build}
-BIN="$BUILD_DIR/lora_phy_vector_dump"
-OUT_DIR=${1:-vectors/generated}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
 
-if [ ! -x "$BIN" ]; then
-    echo "Vector dump binary not found: $BIN" >&2
-    echo "Build the project first (cmake --build $BUILD_DIR)." >&2
-    exit 1
-fi
+# Subdirectory name under vectors/ for this run
+SUBDIR=${1:-sf7}
 
-mkdir -p "$OUT_DIR"
+# Generate vectors via the standalone library
+python3 "$SCRIPT_DIR/generate_lora_phy_vectors.py" \
+    --sf=7 --seed=1 --bytes=16 --out="$SUBDIR"
 
-"$BIN" --sf=7 --seed=1 --bytes=16 --out="$OUT_DIR" \
-    --dump=payload \
-    --dump=pre_interleave \
-    --dump=post_interleave \
-    --dump=iq \
-    --dump=demod \
-    --dump=deinterleave \
-    --dump=decoded
+# Generate matching vectors via the original LoRa-SDR
+python3 "$SCRIPT_DIR/generate_baseline_vectors.py" \
+    --sf=7 --cr=4/5 --snr=30 --seed=1 --out="$SUBDIR"
 
-echo "Vectors written to $OUT_DIR"
+echo "Vectors generated under vectors/lora_phy/$SUBDIR and vectors/lorasdr/$SUBDIR"

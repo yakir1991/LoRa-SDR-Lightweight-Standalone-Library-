@@ -60,7 +60,7 @@ def main() -> None:
     parser.add_argument(
         "--out",
         required=True,
-        help="Output subdirectory name under legacy_vectors/lorasdr_baseline",
+        help="Output subdirectory name under vectors/lorasdr",
     )
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument(
@@ -74,7 +74,7 @@ def main() -> None:
     if not awgn_bin.is_file():
         parser.error(f"AWGN simulation binary not found: {awgn_bin}")
 
-    base_dir = pathlib.Path("legacy_vectors/lorasdr_baseline")
+    base_dir = pathlib.Path("vectors/lorasdr")
     out_dir = base_dir / args.out
     out_dir.mkdir(parents=True, exist_ok=True)
 
