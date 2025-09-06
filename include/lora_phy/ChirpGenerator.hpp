@@ -12,7 +12,7 @@
  *
  * \param [out] samps pointer to the output samples
  * \param N samples per chirp sans the oversampling
- * \param ovs the oversampling size
+ * \param osr oversampling ratio (1 = base rate)
  * \param NN the number of samples to generate
  * \param f0 the phase offset/transmit symbol
  * \param down true for downchirp, false for up
@@ -21,11 +21,12 @@
  * \return the number of samples generated
  */
 template <typename Type>
-int genChirp(std::complex<Type> *samps, int N, int ovs, int NN, Type f0, bool down, const Type ampl, Type &phaseAccum)
+int genChirp(std::complex<Type> *samps, int N, int osr, int NN, Type f0, bool down,
+             const Type ampl, Type &phaseAccum)
 {
-    const Type fMin = -M_PI / ovs;
-    const Type fMax = M_PI / ovs;
-    const Type fStep = (2 * M_PI) / (N * ovs * ovs);
+    const Type fMin = -M_PI / osr;
+    const Type fMax = M_PI / osr;
+    const Type fStep = (2 * M_PI) / (N * osr * osr);
     float f = fMin + f0;
     int i;
     if (down) {

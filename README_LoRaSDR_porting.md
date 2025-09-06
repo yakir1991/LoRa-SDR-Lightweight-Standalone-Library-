@@ -139,7 +139,7 @@ regenerate vectors if any convention is adjusted.
 
 - **tx_runner**: accepts payload (hex) + params; writes float32 IQ file and/or pipes to stdout.
 - **rx_runner**: reads IQ (file/pipe); decodes and reports header/payload/CRC/CFO/TO.
-- **vector_dump**: utility to export internal states (symbols, pre/post interleave, etc.) for debugging.
+- **vector_dump**: utility to export internal states (symbols, pre/post interleave, etc.) for debugging. Supports `--osr=N` to generate oversampled IQ.
 
 **Deliverable**: CLI specifications and file formats (no implementation here).
 

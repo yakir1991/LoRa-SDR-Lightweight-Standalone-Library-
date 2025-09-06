@@ -29,6 +29,7 @@ struct lora_params {
     unsigned sf{}; ///< Spreading factor
     unsigned bw{}; ///< Bandwidth index
     unsigned cr{}; ///< Coding rate index
+    unsigned osr{1}; ///< Oversampling ratio
 };
 
 /**
@@ -51,12 +52,13 @@ struct lora_metrics {
 struct lora_workspace {
     uint16_t*            symbol_buf{}; ///< N entries
     std::complex<float>* fft_in{};     ///< N complex samples
-    std::complex<float>* fft_out{};    ///< N complex samples
+    std::complex<float>* fft_out{};    ///< N*osr complex samples for modulation/demodulation
 
     kissfft_plan<float>  plan_fwd{};   ///< forward FFT plan
     kissfft_plan<float>  plan_inv{};   ///< inverse FFT plan
 
     lora_metrics         metrics{};    ///< updated by processing functions
+    unsigned             osr{1};       ///< oversampling ratio stored during init
 };
 
 // ---------------------------------------------------------------------------
@@ -88,7 +90,7 @@ ssize_t decode(lora_workspace* ws,
                uint8_t* payload, size_t payload_cap);
 
 /** Modulate symbols into complex baseband samples.  @p iq must reference a
- * buffer with capacity for @p symbol_count * (1<<sf) samples.  The function
+ * buffer with capacity for @p symbol_count * (1<<sf) * osr samples.  The function
  * returns the number of samples produced or -ERANGE if @p iq_cap is
  * insufficient. */
 ssize_t modulate(lora_workspace* ws,
@@ -96,8 +98,9 @@ ssize_t modulate(lora_workspace* ws,
                  std::complex<float>* iq, size_t iq_cap);
 
 /** Demodulate @p iq samples into @p symbols using the FFT plans inside @p ws.
- * The input length must be a multiple of the symbol size.  Returns number of
- * symbols produced or a negative error code. */
+ * The input length must be a multiple of the oversampled symbol size
+ * ((1<<sf) * osr).  Returns number of symbols produced or a negative error
+ * code. */
 ssize_t demodulate(lora_workspace* ws,
                    const std::complex<float>* iq, size_t sample_count,
                    uint16_t* symbols, size_t symbol_cap);
@@ -151,13 +154,13 @@ void lora_demod_free(lora_demod_workspace* ws);
 // Modulate an array of symbols into complex baseband samples.
 // samples_per_symbol = 1 << sf
 size_t lora_modulate(const uint16_t* symbols, size_t symbol_count,
-                     std::complex<float>* out_samples, unsigned sf,
+                     std::complex<float>* out_samples, unsigned sf, unsigned osr,
                      float amplitude = 1.0f);
 
 // Demodulate complex samples into symbol indices using a prepared workspace.
 size_t lora_demodulate(lora_demod_workspace* ws,
                        const std::complex<float>* samples, size_t sample_count,
-                       uint16_t* out_symbols);
+                       uint16_t* out_symbols, unsigned osr);
 
 // Simple Hamming(8,4) based encoder. Each input byte becomes two symbols.
 size_t lora_encode(const uint8_t* bytes, size_t byte_count,

@@ -7,10 +7,12 @@ cd "$ROOT_DIR"
 
 # Subdirectory name under vectors/ for this run
 SUBDIR=${1:-sf7}
+# Oversampling ratio
+OSR=${2:-1}
 
 # Generate vectors via the standalone library
 python3 "$SCRIPT_DIR/generate_lora_phy_vectors.py" \
-    --sf=7 --seed=1 --bytes=16 --out="$SUBDIR"
+    --sf=7 --seed=1 --bytes=16 --osr="$OSR" --out="$SUBDIR"
 
 # Generate matching vectors via the original LoRa-SDR
 python3 "$SCRIPT_DIR/generate_baseline_vectors.py" \

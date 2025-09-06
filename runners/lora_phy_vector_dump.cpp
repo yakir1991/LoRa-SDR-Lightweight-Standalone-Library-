@@ -16,7 +16,7 @@ namespace {
 
 void usage(const char* prog) {
     std::cerr << "Usage: " << prog
-              << " --out=DIR [--sf=N] [--bytes=N] [--seed=N]"
+              << " --out=DIR [--sf=N] [--bytes=N] [--seed=N] [--osr=N]"
               << " [--dump=STAGE,...]\n";
 }
 
@@ -25,6 +25,7 @@ void usage(const char* prog) {
 int main(int argc, char** argv) {
     unsigned sf = 7;
     unsigned seed = 1;
+    unsigned osr = 1;
     size_t byte_count = 16;
     std::string out_dir;
     std::set<std::string> dumps;
@@ -37,6 +38,8 @@ int main(int argc, char** argv) {
             seed = static_cast<unsigned>(std::stoul(arg.substr(7)));
         } else if (arg.rfind("--bytes=", 0) == 0) {
             byte_count = static_cast<size_t>(std::stoul(arg.substr(8)));
+        } else if (arg.rfind("--osr=", 0) == 0) {
+            osr = static_cast<unsigned>(std::stoul(arg.substr(6)));
         } else if (arg.rfind("--out=", 0) == 0) {
             out_dir = arg.substr(6);
         } else if (arg.rfind("--dump=", 0) == 0) {
@@ -86,8 +89,8 @@ int main(int argc, char** argv) {
     std::vector<uint16_t> demod(symbol_count);
     std::vector<uint8_t> deinterleave(cw_count, 0);
     std::vector<uint8_t> decoded(byte_count);
-    std::vector<std::complex<float>> fft_in(N), fft_out(N);
-    std::vector<std::complex<float>> samples(symbol_count * N);
+    std::vector<std::complex<float>> fft_in(N), fft_out(N * osr);
+    std::vector<std::complex<float>> samples(symbol_count * N * osr);
 
     lora_workspace ws{};
     ws.symbol_buf = post_interleave.data();
@@ -97,6 +100,7 @@ int main(int argc, char** argv) {
     params.sf = sf;
     params.bw = 0;
     params.cr = 0;
+    params.osr = osr;
     if (init(&ws, &params) != 0) {
         std::cerr << "Failed to initialise workspace\n";
         return 1;

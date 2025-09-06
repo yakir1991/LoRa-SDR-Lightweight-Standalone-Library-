@@ -48,6 +48,7 @@ class Manifest:
     sf: int
     seed: int
     bytes: int
+    osr: int
     files: List[FileRecord]
 
 
@@ -56,6 +57,7 @@ def main() -> None:
     parser.add_argument("--sf", type=int, required=True, help="Spreading factor")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument("--bytes", type=int, default=16, help="Number of payload bytes")
+    parser.add_argument("--osr", type=int, default=1, help="Oversampling ratio")
     parser.add_argument(
         "--out",
         required=True,
@@ -84,6 +86,7 @@ def main() -> None:
         f"--seed={args.seed}",
         f"--bytes={args.bytes}",
         f"--out={out_dir}",
+        f"--osr={args.osr}",
     ]
     run(cmd)
 
@@ -94,7 +97,7 @@ def main() -> None:
         for line in lines:
             re, im = line.split(",")
             samples.append(complex(float(re), float(im)))
-        N = 1 << args.sf
+        N = (1 << args.sf) * args.osr
         if args.cfo_bins != 0.0:
             for n, s in enumerate(samples):
                 ph = 2.0 * math.pi * args.cfo_bins * (n % N) / N
@@ -118,7 +121,7 @@ def main() -> None:
             continue
         files.append(FileRecord(path.name, compute_checksum(path)))
 
-    manifest = Manifest(args.sf, args.seed, args.bytes, files)
+    manifest = Manifest(args.sf, args.seed, args.bytes, args.osr, files)
     with (out_dir / "manifest.json").open("w") as handle:
         json.dump(asdict(manifest), handle, indent=2)
 

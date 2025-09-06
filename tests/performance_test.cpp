@@ -96,14 +96,14 @@ int main() {
         unsigned long long c_start = __rdtsc();
 
         for (size_t pkt = 0; pkt < PACKETS; ++pkt) {
-            lora_phy::lora_modulate(symbols.data(), symbol_count, samples.data(), p.sf);
+            lora_phy::lora_modulate(symbols.data(), symbol_count, samples.data(), p.sf, 1);
             for (size_t s = 0; s < symbol_count; ++s) {
                 for (size_t i = 0; i < samples_per_symbol; ++i) {
                     dechirped[s * samples_per_symbol + i] =
                         samples[s * samples_per_symbol + i] * down[i];
                 }
             }
-            lora_phy::lora_demodulate(&ws, dechirped.data(), sample_count, demod.data());
+            lora_phy::lora_demodulate(&ws, dechirped.data(), sample_count, demod.data(), 1);
         }
 
         unsigned long long c_end = __rdtsc();
