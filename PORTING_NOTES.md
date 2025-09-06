@@ -10,6 +10,8 @@ This document summarizes core functions, dependencies, and allocation models for
 | `LoRaDecoder.cpp` | `LoRaDecoder::work`, `drop` | Pothos framework, `LoRaCodes.hpp` | `std::vector` for buffers; output `Pothos::BufferChunk` | Pothos block wrapper; no Poco/JSON |
 | `ChirpGenerator.hpp` | `genChirp` | `<complex>`, `<cmath>` (includes `Pothos/Config.hpp` for macros) | Writes to caller-provided buffer; no dynamic allocation | Independent; remove Pothos include if unused |
 | `LoRaDetector.hpp` | `feed`, `detect` | `kissfft.hh`, `<vector>` | Internal `std::vector` buffers for FFT | Independent; no external framework |
+| `LoRaCodes.hpp` | `sx1272DataChecksum`, `diagonalInterleaveSx`, `grayToBinary16`, `SX1232RadioComputeWhitening` | Standard library (`<cstdint>`) only | Operates on caller buffers; no dynamic allocation | Contains CRC, interleaving, Gray mapping, whitening |
+| `kissfft.hh` | `kissfft::transform` | `<complex>`, `<vector>` (optional `<alloca.h>`) | Twiddles and stage data allocated in constructor (init-only) | Standalone FFT backend |
 
 # Module Inventory
 
