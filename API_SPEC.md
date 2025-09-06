@@ -1,88 +1,93 @@
 # API Specification
 
-## Workspace and Memory Policy
-- All blocks use the [Pothos](https://github.com/pothosware/PothosCore) runtime.
-- Input and output buffers are managed by `Pothos::BufferManager` and are
-  reference-counted. Callers must not free returned buffers.
-- Each block allocates internal tables proportional to the spread factor `sf`
-  (`N = 1 << sf`). No global state is shared between instances.
+## Workspace
 
-## Entry Points
+The runtime operates on a caller supplied `lora_workspace` structure.  The
+workspace owns all scratch buffers and FFT plans required by the modem.  Buffers
+are allocated by the caller before `init()` and handed to the workspace; the
+library never performs dynamic memory allocation after initialization.  Typical
+fields include symbol and sample buffers, FFT input/output arrays and the
+KISS‑FFT plans reused by `demodulate()`.
 
-### `/lora/lora_encoder`
-- **Factory**: `Pothos::Block* LoRaEncoder::make(void)`
-- **Parameters**
-  - `sf` – spread factor (bits per symbol).
-  - `ppm` – symbol size (≤ `sf`).
-  - `cr` – coding rate (`"4/4"`…`"4/8"`).
-  - `explicit` – enable explicit header mode.
-  - `crc` – append CRC.
-  - `whitening` – apply whitening.
-- **Buffers**: accepts packet payload of `uint8_t` bytes and produces
-  `uint16_t` symbols. Buffers are owned by the runtime.
-- **Errors**: invalid coding rate raises `Pothos::InvalidArgumentException`;
-  other setters are silent.
+```
+struct lora_workspace {
+    /* preallocated by caller */
+    uint16_t     *symbol_buf;    /* N entries */
+    float complex *fft_in;       /* N samples */
+    float complex *fft_out;      /* N samples */
 
-### `/lora/lora_mod`
-- **Factory**: `Pothos::Block* LoRaMod::make(size_t sf)`
-- **Parameters**
-  - `sync` – two‑symbol sync word.
-  - `padding` – number of zero symbols appended after payload.
-  - `ampl` – transmit amplitude.
-  - `ovs` – oversampling ratio.
-- **Buffers**: consumes packet of `uint16_t` symbols and outputs complex
-  samples. Output buffers sized `N * ovs` samples and owned by the runtime.
-- **Errors**: `setOvs()` throws `Pothos::InvalidArgumentException` when the
-  oversampling ratio is outside `[1,256]`.
+    /* initialized by init() */
+    kissfft_plan  plan_fwd;
+    kissfft_plan  plan_inv;
 
-### `/lora/lora_demod`
-- **Factory**: `Pothos::Block* LoRaDemod::make(size_t sf)`
-- **Parameters**
-  - `sync` – two‑symbol sync word to match.
-  - `thresh` – detector threshold in dB.
-  - `mtu` – maximum number of symbols emitted per packet.
-- **Buffers**: consumes complex samples and produces packets of demodulated
-  `uint16_t` symbols. Additional debug ports (`raw`, `dec`, `fft`) provide
-  complex sample buffers for inspection. All buffers are runtime‑owned.
-- **Errors**: demodulator emits an `error` signal when synchronization or
-  detection fails.
+    struct lora_metrics metrics; /* updated by processing functions */
+};
+```
 
-### `/lora/lora_decoder`
-- **Factory**: `Pothos::Block* LoRaDecoder::make(void)`
-- **Parameters**
-  - `sf` – spread factor (bits per symbol).
-  - `ppm` – symbol size (≤ `sf`).
-  - `cr` – coding rate.
-  - `explicit`, `hdr`, `dataLength`, `crcc`, `whitening`, `interleaving`,
-    `errorCheck` – control header handling and error checks.
-- **Buffers**: accepts packets of `uint16_t` symbols and outputs packets of
-  decoded `uint8_t` bytes. Buffers remain owned by the runtime.
-- **Errors**: unknown coding rates or failed parameter checks throw
-  `Pothos::InvalidArgumentException`. Runtime decoding problems increment the
-  dropped‑packet counter and emit a `dropped` signal.
+The caller retains ownership of the workspace and the memory referenced by its
+pointers.  The library never frees or reallocates these buffers.
 
-## Supporting Functions
+## Functions
 
-### `LoRaDetector::detect`
-`size_t detect(Type &power, Type &powerAvg, Type &fIndex,
-               std::complex<Type> *fftOutput = nullptr)`
-- Runs an FFT over fed samples and returns the index of the strongest bin.
-- `power`, `powerAvg`, and `fIndex` are output parameters.
-- When `fftOutput` is `nullptr`, an internal buffer is used.
-- No explicit error code; `fIndex` is set to zero when the denominator is
-  zero.
+All routines return `0` on success or a negative error code (`-EINVAL`,
+`-ERANGE`, …) on failure unless noted otherwise.  Output functions return the
+number of elements written when successful.
 
-## Return Codes and Error Semantics
-- Factory functions return a valid `Pothos::Block*` on success.
-- Parameter setters return `void`; invalid arguments raise
-  `Pothos::InvalidArgumentException`.
-- Runtime failures are reported through registered signals (`error`,
-  `dropped`).
-- The API does not use numeric return codes for errors.
+### `int init(struct lora_workspace *ws, const struct lora_params *cfg);`
+Initializes the workspace for a given set of parameters.
 
-## Buffer Ownership
-- Input buffers are consumed by the block; callers should not read after
-  consumption.
-- Output buffers and packet payloads are owned by the Pothos framework and are
-  valid until the next work call posts new data.
-- No functions transfer ownership of raw pointers to the caller.
+* `ws` – workspace to populate. Must reference valid buffers.
+* `cfg` – modulation and coding parameters (spread factor, coding rate, etc.).
+* Returns `0` on success or `-EINVAL` if parameters are invalid.
+
+### `void reset(struct lora_workspace *ws);`
+Clears runtime counters and metric fields inside `ws` without touching the
+preallocated buffers or FFT plans.
+
+### `ssize_t encode(struct lora_workspace *ws,
+                     const uint8_t *payload, size_t payload_len,
+                     uint16_t *symbols, size_t symbol_cap);`
+Encodes a payload into LoRa symbols.
+
+* `payload` – input bytes; caller retains ownership.
+* `symbols` – caller provided output buffer with capacity `symbol_cap`.
+* Returns number of symbols produced or `-ERANGE` if `symbol_cap` is too small.
+
+### `ssize_t decode(struct lora_workspace *ws,
+                     const uint16_t *symbols, size_t symbol_count,
+                     uint8_t *payload, size_t payload_cap);`
+Decodes a block of symbols into payload bytes.
+
+* `symbols` – input symbol buffer owned by caller.
+* `payload` – output buffer supplied by caller.
+* Returns number of bytes written or a negative error code on CRC/format error.
+
+### `ssize_t modulate(struct lora_workspace *ws,
+                       const uint16_t *symbols, size_t symbol_count,
+                       float complex *iq, size_t iq_cap);`
+Generates complex time‑domain samples from symbols.
+
+* `symbols` – input symbols.
+* `iq` – caller supplied buffer for `symbol_count * (1<<sf)` samples.
+* Returns samples written or `-ERANGE` if the buffer is insufficient.
+
+### `ssize_t demodulate(struct lora_workspace *ws,
+                         const float complex *iq, size_t sample_count,
+                         uint16_t *symbols, size_t symbol_cap);`
+Demodulates IQ samples into decided symbols using the workspace FFT plans.
+
+* `iq` – input samples; length must be a multiple of symbol size.
+* `symbols` – output buffer for decoded symbols.
+* Returns number of symbols produced or negative error on invalid sizes.
+
+### `const struct lora_metrics *get_last_metrics(const struct lora_workspace *ws);`
+Returns a pointer to the metrics collected during the most recent processing
+call (`decode` or `demodulate`).  The caller must not free the returned pointer
+and it remains valid until the next call that updates the metrics.
+
+## Buffer Ownership and Error Handling
+
+All input and output buffers are owned by the caller.  The library reads from or
+writes to them only for the duration of the call.  No asynchronous callbacks are
+involved; errors are reported solely through return codes.
+
