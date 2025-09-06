@@ -8,7 +8,8 @@ void lora_demod_init(lora_demod_workspace* ws, unsigned sf)
     ws->N = size_t(1) << sf;
     ws->fft_in = new std::complex<float>[ws->N];
     ws->fft_out = new std::complex<float>[ws->N];
-    ws->fft = new kissfft<float>(ws->N, false);
+    kissfft<float>::init(ws->fft_plan, ws->N, false);
+    ws->fft = new kissfft<float>(ws->fft_plan);
     ws->detector = new LoRaDetector<float>(ws->N, ws->fft_in, ws->fft_out, *ws->fft);
 }
 

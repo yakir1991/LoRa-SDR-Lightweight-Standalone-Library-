@@ -16,7 +16,9 @@ POTHOS_TEST_BLOCK("/lora/tests", test_detector)
 
     std::vector<std::complex<float>> fft_in(N);
     std::vector<std::complex<float>> fft_out(N);
-    kissfft<float> fft(N, false);
+    kissfft_plan<float> plan;
+    kissfft<float>::init(plan, N, false);
+    kissfft<float> fft(plan);
     LoRaDetector<float> detector(N, fft_in.data(), fft_out.data(), fft);
 
     for (size_t sym = 0; sym < N; sym++)
