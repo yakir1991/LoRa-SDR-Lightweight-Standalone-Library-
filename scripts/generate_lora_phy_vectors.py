@@ -58,7 +58,7 @@ def main() -> None:
     parser.add_argument(
         "--out",
         required=True,
-        help="Output subdirectory name under vectors/lora_phy_baseline",
+        help="Output subdirectory name under vectors/lora_phy",
     )
     parser.add_argument(
         "--binary",
@@ -71,7 +71,7 @@ def main() -> None:
     if not vector_bin.is_file():
         parser.error(f"Vector dump binary not found: {vector_bin}")
 
-    base_dir = pathlib.Path("vectors/lora_phy_baseline")
+    base_dir = pathlib.Path("vectors/lora_phy")
     out_dir = base_dir / args.out
     out_dir.mkdir(parents=True, exist_ok=True)
 
