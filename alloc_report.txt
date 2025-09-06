@@ -1,0 +1,4 @@
+src/phy/LoRaDemod.cpp:9:    ws->fft_in = new std::complex<float>[ws->N];
+src/phy/LoRaDemod.cpp:10:    ws->fft_out = new std::complex<float>[ws->N];
+src/phy/LoRaDemod.cpp:12:    ws->fft = new kissfft<float>(ws->fft_plan);
+src/phy/LoRaDemod.cpp:13:    ws->detector = new LoRaDetector<float>(ws->N, ws->fft_in, ws->fft_out, *ws->fft);

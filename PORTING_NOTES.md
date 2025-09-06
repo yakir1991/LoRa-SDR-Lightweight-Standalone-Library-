@@ -47,3 +47,12 @@ These files remain in the legacy portion and will not be ported to the core libr
 | `kissfft.hh` | Initialization only |
 | `TestCodesSx.cpp` | Runtime |
 
+
+## Zero-allocation scan
+
+Run `scripts/scan_allocs.sh` to search `src` and `include` for dynamic allocation patterns such as `new`, `malloc`, `resize`, or `push_back`. The script writes matches to `alloc_report.txt`. The file is empty when the code base is "zero-alloc".
+
+```bash
+bash scripts/scan_allocs.sh
+cat alloc_report.txt
+```
