@@ -1,8 +1,17 @@
 // Copyright (c) 2016-2016 Lime Microsystems
 // SPDX-License-Identifier: BSL-1.0
 
-#include "kissfft.hh"
+#pragma once
+
 #include <complex>
+#include <lora_phy/kissfft.hh>
+
+/**
+ * Lightweight FFT based detector.  The caller supplies the FFT input/output
+ * buffers and the kissfft instance; the class does not allocate or free memory
+ * and merely reads or writes to the provided arrays for the duration of the
+ * call.
+ */
 
 template <typename Type>
 class LoRaDetector

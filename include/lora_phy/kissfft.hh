@@ -6,8 +6,9 @@
 
 // The implementation below is a minimal subset of KISS FFT adapted for use in
 // fixed-size workspaces. All memory required for the transform is provided by a
-// plan structure containing statically sized arrays. No dynamic allocations are
-// performed during transform calls.
+// plan structure containing statically sized arrays.  Callers are responsible
+// for allocating the plan and the input/output buffers; no dynamic allocations
+// are performed and the library never frees caller owned memory.
 
 namespace kissfft_utils {
 
