@@ -4,6 +4,11 @@ project(lora_phy LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_compile_options(-Wall -Wextra -Wpedantic -O2)
+
+option(BUILD_TESTS "Build tests" ON)
+option(BUILD_RUNNERS "Build runners" ON)
+
 file(GLOB LORA_PHY_SOURCES CONFIGURE_DEPENDS src/phy/*.cpp)
 
 add_library(lora_phy STATIC ${LORA_PHY_SOURCES})
@@ -13,30 +18,33 @@ target_include_directories(lora_phy PUBLIC include)
 # ensure headers like kissfft.hh are part of the target for IDEs
 target_sources(lora_phy PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/lora_phy/kissfft.hh)
 
+if(BUILD_RUNNERS)
+    add_executable(lora_phy_vector_dump runners/lora_phy_vector_dump.cpp)
+    target_link_libraries(lora_phy_vector_dump PRIVATE lora_phy)
 
-add_executable(lora_phy_vector_dump runners/lora_phy_vector_dump.cpp)
-target_link_libraries(lora_phy_vector_dump PRIVATE lora_phy)
+    # Transmit runner producing IQ samples from a hex payload
+    add_executable(tx_runner runners/tx_runner.cpp)
+    target_link_libraries(tx_runner PRIVATE lora_phy)
 
-# Transmit runner producing IQ samples from a hex payload
-add_executable(tx_runner runners/tx_runner.cpp)
-target_link_libraries(tx_runner PRIVATE lora_phy)
+    # Receive runner converting IQ samples back into payload bytes
+    add_executable(rx_runner runners/rx_runner.cpp)
+    target_link_libraries(rx_runner PRIVATE lora_phy)
+endif()
 
-# Receive runner converting IQ samples back into payload bytes
-add_executable(rx_runner runners/rx_runner.cpp)
-target_link_libraries(rx_runner PRIVATE lora_phy)
+if(BUILD_TESTS)
+    enable_testing()
 
-# Bit exactness regression test
-add_executable(bit_exact_test tests/bit_exact_test.cpp)
-target_link_libraries(bit_exact_test PRIVATE lora_phy)
+    file(GLOB TEST_SOURCES CONFIGURE_DEPENDS tests/*.cpp)
+    list(REMOVE_ITEM TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_main.cpp)
 
-# End-to-end encode/modulate/demodulate test
-add_executable(e2e_chain_test tests/e2e_chain_test.cpp)
-target_link_libraries(e2e_chain_test PRIVATE lora_phy)
+    add_executable(lora_phy_tests tests/test_main.cpp ${TEST_SOURCES})
+    target_link_libraries(lora_phy_tests PRIVATE lora_phy)
 
-# Allocation tracking test for modulate/demodulate
-add_executable(no_alloc_test tests/no_alloc_test.cpp)
-target_link_libraries(no_alloc_test PRIVATE lora_phy)
+    foreach(test_src ${TEST_SOURCES})
+        get_filename_component(test_name ${test_src} NAME_WE)
+        set_source_files_properties(${test_src} PROPERTIES COMPILE_DEFINITIONS "main=${test_name}_main")
+    endforeach()
 
-# Performance timing test
-add_executable(performance_test tests/performance_test.cpp)
-target_link_libraries(performance_test PRIVATE lora_phy)
+    add_test(NAME lora_phy_tests COMMAND lora_phy_tests)
+    set_tests_properties(lora_phy_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endif()
