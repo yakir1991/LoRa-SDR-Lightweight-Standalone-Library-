@@ -112,7 +112,9 @@
 - **CRC**: polynomial, endian, initialization.
 - **Sync-word**: masking and header mapping exactly as required.
 
-**Deliverable**: “semantic decisions” table + vector updates if any convention is adjusted.
+**Deliverable**: “semantic decisions” table (`SEMANTIC_COMPATIBILITY.md`) and a
+vector comparison script (`scripts/compare_vectors.py`) to flag mismatches;
+regenerate vectors if any convention is adjusted.
 
 ---
 

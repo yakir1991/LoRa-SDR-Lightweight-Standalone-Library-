@@ -56,3 +56,9 @@ Run `scripts/scan_allocs.sh` to search `src` and `include` for dynamic allocatio
 bash scripts/scan_allocs.sh
 cat alloc_report.txt
 ```
+
+## Numeric & semantic compatibility
+
+Compare vectors produced by the original LoRa-SDR code and the new library with
+`scripts/compare_vectors.py`. The script hashes all files in two directories and
+reports any mismatch, highlighting deviations in numeric conventions.
