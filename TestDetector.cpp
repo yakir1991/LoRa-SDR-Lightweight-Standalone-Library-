@@ -5,6 +5,7 @@
 #include "LoRaDetector.hpp"
 #include "ChirpGenerator.hpp"
 #include <iostream>
+#include <vector>
 
 POTHOS_TEST_BLOCK("/lora/tests", test_detector)
 {
@@ -13,6 +14,11 @@ POTHOS_TEST_BLOCK("/lora/tests", test_detector)
     std::vector<std::complex<float>> downChirp(N);
     genChirp(downChirp.data(), N, 1, N, 0.0f, true, 1.0f, phaseAccum);
 
+    std::vector<std::complex<float>> fft_in(N);
+    std::vector<std::complex<float>> fft_out(N);
+    kissfft<float> fft(N, false);
+    LoRaDetector<float> detector(N, fft_in.data(), fft_out.data(), fft);
+
     for (size_t sym = 0; sym < N; sym++)
     {
         std::cout << "testing detector on symbol = " << sym << std::endl;
@@ -20,7 +26,6 @@ POTHOS_TEST_BLOCK("/lora/tests", test_detector)
         phaseAccum = M_PI/4; //some phase offset
         genChirp(chirp.data(), N, 1, N, float(2*M_PI*sym)/N, false, 1.0f, phaseAccum);
 
-        LoRaDetector<float> detector(N);
         for (size_t i = 0; i < N; i++) detector.feed(i, downChirp[i]*chirp[i]);
         float power, powerAvg, fIndex;
         const size_t index = detector.detect(power, powerAvg, fIndex);

@@ -3,33 +3,34 @@
 
 #include "kissfft.hh"
 #include <complex>
-#include <vector>
 
 template <typename Type>
 class LoRaDetector
 {
 public:
-    LoRaDetector(const size_t N):
+    LoRaDetector(const size_t N,
+        std::complex<Type>* fft_in,
+        std::complex<Type>* fft_out,
+        kissfft<Type>& fft):
         N(N),
-        _fftInput(N),
-        _fftOutput(N),
-        _fft(N, false)
+        fft_in(fft_in),
+        fft_out(fft_out),
+        _fft(fft)
     {
         _powerScale = 20*std::log10(N);
-        return;
     }
 
     //! feed simply sets an input sample
     void feed(const size_t i, const std::complex<Type> &samp)
     {
-        _fftInput[i] = samp;
+        fft_in[i] = samp;
     }
 
     //! calculates argmax(abs(fft(input)))
     size_t detect(Type &power, Type &powerAvg, Type &fIndex, std::complex<Type> *fftOutput = nullptr)
     {
-        if (fftOutput == nullptr) fftOutput = _fftOutput.data();
-        _fft.transform(_fftInput.data(), fftOutput);
+        if (fftOutput == nullptr) fftOutput = fft_out;
+        _fft.transform(fft_in, fftOutput);
         size_t maxIndex = 0;
         Type maxValue = 0;
         double total = 0;
@@ -66,7 +67,7 @@ public:
 private:
     const size_t N;
     Type _powerScale;
-    std::vector<std::complex<Type>> _fftInput;
-    std::vector<std::complex<Type>> _fftOutput;
-    kissfft<Type> _fft;
+    std::complex<Type>* fft_in;
+    std::complex<Type>* fft_out;
+    kissfft<Type>& _fft;
 };
