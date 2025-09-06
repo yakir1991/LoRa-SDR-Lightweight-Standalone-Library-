@@ -21,3 +21,13 @@ This document summarizes core functions, dependencies, and allocation models for
 | Utilities | `BlockGen.cpp`, `TestCodesSx.cpp`, `TestDetector.cpp`, `TestGen.cpp`, `TestHamming.cpp`, `TestLoopback.cpp` |
 | FFT | `kissfft.hh` |
 
+## Pothos-only wrappers
+
+These files remain in the legacy portion and will not be ported to the core library:
+
+- `BlockGen.cpp`
+- `TestGen.cpp`
+- `TestHamming.cpp`
+- `TestDetector.cpp`
+- `TestLoopback.cpp`
+
