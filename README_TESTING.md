@@ -4,12 +4,24 @@
 The test suite validates the LoRa PHY library for bit accuracy, end-to-end modulation/demodulation, error-rate behaviour and performance.  It ensures typical LoRa profiles work and checks for dynamic allocations.
 
 ## Generating Reference Vectors
-Deterministic vectors are required for regression tests.  Generate them after building the project:
+Deterministic vectors are required for regression tests.  Generate them after
+building the project:
 
 ```bash
-python scripts/generate_vectors.py --sf 7 --seed 1 --out vectors/my_run
+scripts/generate_vectors.sh vectors/my_run
 ```
-The script writes IQ samples and decoded payloads under `vectors/` with a manifest of hashes so they can be regenerated.
+
+The script invokes `lora_phy_vector_dump` with typical parameters (SF7,
+16 payload bytes, seed 1) and writes the selected internal states to the
+provided directory.  Generated files include:
+
+* `payload.bin` – raw payload bytes
+* `pre_interleave.csv` – Hamming encoded codewords (decimal per line)
+* `post_interleave.csv` – symbols after the diagonal interleaver
+* `iq_samples.csv` – complex samples as `real,imag`
+* `demod_symbols.csv` – demodulated symbols
+* `deinterleave.csv` – codewords after deinterleaving
+* `decoded.bin` – final decoded payload
 
 ## Running Tests
 Build the test executables:
