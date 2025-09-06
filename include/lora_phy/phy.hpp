@@ -13,7 +13,8 @@ struct lora_demod_workspace {
     size_t N{};
     std::complex<float>* fft_in{};
     std::complex<float>* fft_out{};
-    kissfft<float>* fft{};
+    kissfft_plan<float> fft_plan{}; // preallocated plan for kissfft
+    kissfft<float>* fft{};          // fft instance using the plan
     LoRaDetector<float>* detector{};
 };
 
