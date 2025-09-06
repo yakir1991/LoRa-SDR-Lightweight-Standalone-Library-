@@ -43,7 +43,10 @@ int main(int argc, char** argv) {
     size_t sample_count = lora_phy::lora_modulate(symbols.data(), symbol_count, samples.data(), sf);
 
     std::vector<uint16_t> demod(symbol_count);
-    lora_phy::lora_demodulate(samples.data(), sample_count, demod.data(), sf);
+    lora_phy::lora_demod_workspace demod_ws{};
+    lora_phy::lora_demod_init(&demod_ws, sf);
+    lora_phy::lora_demodulate(&demod_ws, samples.data(), sample_count, demod.data());
+    lora_phy::lora_demod_free(&demod_ws);
 
     std::vector<uint8_t> decoded(byte_count);
     lora_phy::lora_decode(demod.data(), symbol_count, decoded.data());
