@@ -15,6 +15,7 @@ import os
 import pathlib
 import subprocess
 import sys
+import math
 from dataclasses import asdict, dataclass
 from typing import List
 
@@ -65,6 +66,8 @@ def main() -> None:
         default=os.environ.get("LORAPHY_VECTOR_BIN", "build/lora_phy_vector_dump"),
         help="Path to the lora_phy_vector_dump binary",
     )
+    parser.add_argument("--cfo-bins", type=float, default=0.0, help="CFO in FFT bins")
+    parser.add_argument("--time-offset", type=float, default=0.0, help="Sample time offset")
     args = parser.parse_args()
 
     vector_bin = pathlib.Path(args.binary).resolve()
@@ -83,6 +86,31 @@ def main() -> None:
         f"--out={out_dir}",
     ]
     run(cmd)
+
+    iq_path = out_dir / "iq_samples.csv"
+    if (args.cfo_bins != 0.0 or args.time_offset != 0.0) and iq_path.is_file():
+        lines = iq_path.read_text().strip().splitlines()
+        samples: List[complex] = []
+        for line in lines:
+            re, im = line.split(",")
+            samples.append(complex(float(re), float(im)))
+        N = 1 << args.sf
+        if args.cfo_bins != 0.0:
+            for n, s in enumerate(samples):
+                ph = 2.0 * math.pi * args.cfo_bins * (n % N) / N
+                rot = complex(math.cos(ph), math.sin(ph))
+                samples[n] = s * rot
+        if args.time_offset != 0.0:
+            shift = int(round(args.time_offset))
+            if shift > 0:
+                samples = samples[shift:] + [0j] * shift
+            elif shift < 0:
+                shift = -shift
+                samples = [0j] * shift + samples[:-shift]
+        out_iq = out_dir / "iq_samples_offset.csv"
+        with out_iq.open("w") as handle:
+            for s in samples:
+                handle.write(f"{s.real},{s.imag}\n")
 
     files: List[FileRecord] = []
     for path in sorted(out_dir.glob("*")):

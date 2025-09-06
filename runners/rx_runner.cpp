@@ -14,7 +14,7 @@ namespace {
 
 void usage(const char* prog) {
     std::cerr << "Usage: " << prog
-              << " [--in=FILE] [--sf=N] [--cr=N]\n";
+              << " [--in=FILE] [--sf=N] [--cr=N] [--report-offsets]\n";
     std::cerr << "Input samples are float32 IQ pairs" << std::endl;
 }
 
@@ -24,6 +24,7 @@ int main(int argc, char** argv) {
     std::string in_path;
     lora_params params{};
     params.sf = 7; // defaults
+    bool report_offsets = false;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -33,6 +34,8 @@ int main(int argc, char** argv) {
             params.sf = static_cast<unsigned>(std::stoul(arg.substr(5)));
         } else if (arg.rfind("--cr=", 0) == 0) {
             params.cr = static_cast<unsigned>(std::stoul(arg.substr(5)));
+        } else if (arg == "--report-offsets") {
+            report_offsets = true;
         } else if (arg == "--help" || arg == "-h") {
             usage(argv[0]);
             return 0;
@@ -113,7 +116,7 @@ int main(int argc, char** argv) {
     }
     std::cout << std::dec << "\n";
 
-    if (m) {
+    if (report_offsets && m) {
         std::cout << "CRC OK: " << (m->crc_ok ? "yes" : "no") << "\n";
         std::cout << "CFO: " << m->cfo << "\n";
         std::cout << "Time offset: " << m->time_offset << "\n";
