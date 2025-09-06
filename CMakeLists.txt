@@ -16,3 +16,7 @@ target_sources(lora_phy PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/lora_phy/kiss
 
 add_executable(lora_phy_vector_dump runners/lora_phy_vector_dump.cpp)
 target_link_libraries(lora_phy_vector_dump PRIVATE lora_phy)
+
+# Bit exactness regression test
+add_executable(bit_exact_test tests/bit_exact_test.cpp)
+target_link_libraries(bit_exact_test PRIVATE lora_phy)

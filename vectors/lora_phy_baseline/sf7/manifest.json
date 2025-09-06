@@ -1,0 +1,27 @@
+{
+  "sf": 7,
+  "seed": 0,
+  "bytes": 16,
+  "files": [
+    {
+      "name": "decoded.bin",
+      "sha256": "fa2e05ad6a100974cf16341ffb3d6ff54c74c895940d00098fa863ac91930ed7"
+    },
+    {
+      "name": "demod_symbols.csv",
+      "sha256": "c35eb0feaee2225e3868e3e6c15d38e8d0f391952dc535dc9715bfe24f072fc1"
+    },
+    {
+      "name": "iq_samples.csv",
+      "sha256": "15e42d98d30e1ec9df3a261fc6e219009f5ca48f2c5489d3f58d64499eaeb8e2"
+    },
+    {
+      "name": "payload.bin",
+      "sha256": "3fb2a9cd46329814173315b126345534b3bf388df4b3e52a6d8c1da943bddb0b"
+    },
+    {
+      "name": "symbols.csv",
+      "sha256": "a4b32d186e428bb1455f0482b76edcd0ce074b7a97f2c1067d2855d05fa4fe16"
+    }
+  ]
+}
