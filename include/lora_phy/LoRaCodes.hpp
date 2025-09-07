@@ -110,10 +110,14 @@ static inline uint16_t sx1272DataChecksum(const uint8_t *data, int length) {
  **********************************************************************/
 static inline void SX1232RadioComputeWhitening( uint8_t *buffer, uint16_t bufferSize )
 {
+    // Reference polynomial: x^9 + x^5 + 1 (0x021) with seed 0x1FF as documented in
+    // Semtech AN1200.18.  The SX1232 uses the same LFSR for both whitening and
+    // de-whitening, so the initial state must be reloaded for each packet.
     uint8_t WhiteningKeyMSB; // Global variable so the value is kept after starting the
     uint8_t WhiteningKeyLSB; // de-whitening process
-    WhiteningKeyMSB = 0x01; // Init value for the LFSR, these values should be initialize only
-    WhiteningKeyLSB = 0xFF; // at the start of a whitening or a de-whitening process
+    WhiteningKeyMSB = 0x01; // Init value for the LFSR (MSB of seed)
+    WhiteningKeyLSB = 0xFF; // Init value for the LFSR (LSB of seed)
+    static_assert(((0x01u << 8) | 0xFFu) == 0x1FFu, "SX1232 whitening seed must be 0x1FF");
     // *buffer is a char pointer indicating the data to be whiten / de-whiten
     // buffersize is the number of char to be whiten / de-whiten
     // >> The whitened / de-whitened data are directly placed into the pointer
@@ -135,7 +139,10 @@ static inline void SX1232RadioComputeWhitening( uint8_t *buffer, uint16_t buffer
 
 /***********************************************************************
  *  Whitening generator reverse engineered from Sx1272 data stream.
- *  Each bit of a codeword is combined with the output from a different position in the whitening sequence.
+ *  Each bit of a codeword is combined with the output from a different position in
+ *  the whitening sequence.  The sequence itself is produced by the same
+ *  x^9 + x^5 + 1 (0x021) LFSR seeded with 0x1FF; the offsets below align the
+ *  parallel LFSRs used by the Sx1272 modem.
  **********************************************************************/
 static inline void Sx1272ComputeWhitening(uint8_t *buffer, uint16_t bufferSize, const int bitOfs, const int RDD) {
 	static const int ofs0[8] = {6,4,2,0,-112,-114,-302,-34 };	// offset into sequence for each bit
@@ -161,7 +168,10 @@ static inline void Sx1272ComputeWhitening(uint8_t *buffer, uint16_t bufferSize, 
 
 /***********************************************************************
  *  Whitening generator reverse engineered from Sx1272 data stream.
- *  Same as above but using the actual interleaved LFSRs.
+ *  Same as above but using the actual interleaved LFSRs.  Each 8-bit LFSR uses
+ *  polynomial 0x1D (x^8 + x^4 + x^3 + x^2 + 1).  The seed values below were
+ *  extracted from captured Sx1272 traffic and correspond to an LFSR seeded with
+ *  0xFF.
  **********************************************************************/
 static inline void Sx1272ComputeWhiteningLfsr(uint8_t *buffer, uint16_t bufferSize, const int bitOfs, const size_t RDD) {
     static const uint64_t seed1[2] = {0x6572D100E85C2EFF,0xE85C2EFFFFFFFFFF};   // lfsr start values

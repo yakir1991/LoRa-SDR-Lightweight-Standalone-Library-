@@ -5,6 +5,7 @@ int e2e_chain_test_main();
 int no_alloc_test_main();
 int performance_test_main();
 int roundtrip_test_main();
+int whitening_test_main();
 
 int main() {
     int result = 0;
@@ -13,6 +14,7 @@ int main() {
     result |= no_alloc_test_main();
     result |= performance_test_main();
     result |= roundtrip_test_main();
+    result |= whitening_test_main();
     if (result != 0) {
         std::printf("Some tests failed\n");
     }
