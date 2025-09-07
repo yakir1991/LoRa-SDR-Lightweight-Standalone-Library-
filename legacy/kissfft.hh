@@ -1,3 +1,5 @@
+// Derived from the KISS FFT library; see THIRD_PARTY.md for the BSD-3-Clause license details.
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef KISSFFT_CLASS_HH
 #define KISSFFT_CLASS_HH
 #include <complex>
