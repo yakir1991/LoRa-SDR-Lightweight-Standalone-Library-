@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
     std::vector<uint8_t> decoded(byte_count);
     std::vector<std::complex<float>> fft_in(N), fft_out(N * osr);
     std::vector<float> window(N);
-    std::vector<std::complex<float>> samples(symbol_count * N * osr);
+    std::vector<std::complex<float>> samples((symbol_count + 2) * N * osr);
 
     lora_workspace ws{};
     ws.symbol_buf = post_interleave.data();

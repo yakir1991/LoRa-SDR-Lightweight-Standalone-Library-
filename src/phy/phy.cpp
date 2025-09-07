@@ -31,6 +31,7 @@ int init(lora_workspace* ws, const lora_params* cfg) {
     ws->metrics = {};
     ws->osr = cfg->osr ? cfg->osr : 1u;
     ws->bw = cfg->bw;
+    ws->sync_word = cfg->sync_word;
     ws->window_kind = cfg->window;
     if (ws->window) {
         if (ws->window_kind == window_type::window_hann) {
@@ -67,7 +68,9 @@ ssize_t modulate(lora_workspace* ws,
     if (!ws || !symbols || !iq) return -1;
     unsigned sf = deduce_sf(ws);
     unsigned osr = get_osr(ws);
-    size_t produced = lora_modulate(symbols, symbol_count, iq, sf, osr, ws->bw);
+    size_t produced =
+        lora_modulate(symbols, symbol_count, iq, sf, osr, ws->bw, 1.0f,
+                      ws->sync_word);
     if (produced > iq_cap) return -1;
     return static_cast<ssize_t>(produced);
 }
@@ -181,7 +184,9 @@ ssize_t demodulate(lora_workspace* ws,
     size_t N = size_t(1) << sf;
     size_t step = N * osr;
     if (sample_count % step != 0) return -1;
-    size_t num_symbols = sample_count / step;
+    size_t total_symbols = sample_count / step;
+    if (total_symbols < 2) return -1;
+    size_t num_symbols = total_symbols - 2;
     if (num_symbols > symbol_cap) return -1;
 
     size_t est_samples = std::min(sample_count, step * size_t(2));
@@ -191,7 +196,8 @@ ssize_t demodulate(lora_workspace* ws,
     LoRaDetector<float> detector(N, ws->fft_in, ws->fft_out, fft);
     int t_off = static_cast<int>(std::round(ws->metrics.time_offset));
     float rate = -2.0f * float(M_PI) * ws->metrics.cfo / static_cast<float>(N);
-    for (size_t s = 0; s < num_symbols; ++s) {
+    uint16_t sw0 = 0, sw1 = 0;
+    for (size_t s = 0; s < total_symbols; ++s) {
         float tmp = 0.0f;
         float bw_scale = lora_phy::bw_scale(ws->bw);
         genChirp(ws->fft_out, static_cast<int>(N), 1, static_cast<int>(N),
@@ -219,8 +225,16 @@ ssize_t demodulate(lora_workspace* ws,
         }
         float p, pav, findex;
         size_t idx = detector.detect(p, pav, findex);
-        symbols[s] = static_cast<uint16_t>(idx);
+        if (s == 0)
+            sw0 = static_cast<uint16_t>(idx);
+        else if (s == 1)
+            sw1 = static_cast<uint16_t>(idx);
+        else
+            symbols[s - 2] = static_cast<uint16_t>(idx);
     }
+    unsigned shift = sf > 4 ? (sf - 4) : 0;
+    ws->sync_word = static_cast<uint8_t>(((sw0 >> shift) & 0x0f) << 4 |
+                                         ((sw1 >> shift) & 0x0f));
     return static_cast<ssize_t>(num_symbols);
 }
 

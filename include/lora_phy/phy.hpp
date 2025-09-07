@@ -53,6 +53,7 @@ struct lora_params {
     unsigned cr{};                   ///< Coding rate index
     unsigned osr{1};                 ///< Oversampling ratio
     window_type window{window_type::window_none}; ///< Optional analysis window
+    uint8_t sync_word{0x12};         ///< Two-nibble network sync word
 };
 
 /**
@@ -86,6 +87,7 @@ struct lora_workspace {
     lora_metrics         metrics{};    ///< updated by processing functions
     unsigned             osr{1};       ///< oversampling ratio stored during init
     bandwidth           bw{bandwidth::bw_125}; ///< bandwidth stored during init
+    uint8_t             sync_word{0x12}; ///< configured network sync word
 };
 
 // ---------------------------------------------------------------------------
@@ -185,12 +187,14 @@ void lora_demod_free(lora_demod_workspace* ws);
 // samples_per_symbol = 1 << sf
 size_t lora_modulate(const uint16_t* symbols, size_t symbol_count,
                      std::complex<float>* out_samples, unsigned sf, unsigned osr,
-                     bandwidth bw, float amplitude = 1.0f);
+                     bandwidth bw, float amplitude = 1.0f,
+                     uint8_t sync = 0x12);
 
 // Demodulate complex samples into symbol indices using a prepared workspace.
 size_t lora_demodulate(lora_demod_workspace* ws,
                        const std::complex<float>* samples, size_t sample_count,
-                       uint16_t* out_symbols, unsigned osr);
+                       uint16_t* out_symbols, unsigned osr,
+                       uint8_t* out_sync = nullptr);
 
 // Simple Hamming(8,4) based encoder. Each input byte becomes two symbols.
 size_t lora_encode(const uint8_t* bytes, size_t byte_count,

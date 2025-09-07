@@ -1,4 +1,5 @@
 #include <lora_phy/phy.hpp>
+#include <lora_phy/ChirpGenerator.hpp>
 #include <complex>
 #include <cstdint>
 #include <fstream>
@@ -110,13 +111,34 @@ int main() {
             continue;
         }
         const size_t symbol_count = sample_count / samples_per_symbol;
-        std::vector<uint16_t> demod(symbol_count);
+        if (symbol_count < 2) {
+            std::cerr << "Not enough symbols for profile " << p.name << "\n";
+            ok = false;
+            continue;
+        }
+        const size_t data_symbols = symbol_count - 2;
+        std::vector<std::complex<float>> dechirped(sample_count);
+        std::vector<std::complex<float>> down(samples_per_symbol);
+        float phase = 0.0f;
+        float scale = lora_phy::bw_scale(static_cast<lora_phy::bandwidth>(p.bw));
+        genChirp(down.data(), static_cast<int>(samples_per_symbol), 1,
+                 static_cast<int>(samples_per_symbol), 0.0f, true, 1.0f, phase,
+                 scale);
+        for (size_t s = 0; s < symbol_count; ++s) {
+            for (size_t i = 0; i < samples_per_symbol; ++i) {
+                dechirped[s * samples_per_symbol + i] =
+                    samples[s * samples_per_symbol + i] * down[i];
+            }
+        }
+
+        std::vector<uint16_t> demod(data_symbols);
         lora_phy::lora_demod_workspace ws{};
         lora_phy::lora_demod_init(&ws, p.sf);
-        lora_phy::lora_demodulate(&ws, samples.data(), sample_count, demod.data(), 1);
+        lora_phy::lora_demodulate(&ws, dechirped.data(), sample_count,
+                                   demod.data(), 1, nullptr);
         lora_phy::lora_demod_free(&ws);
         std::vector<uint8_t> decoded(expected.size());
-        lora_phy::lora_decode(demod.data(), symbol_count, decoded.data());
+        lora_phy::lora_decode(demod.data(), data_symbols, decoded.data());
         if (decoded != expected) {
             std::cerr << "Mismatch in profile " << p.name << ":\n";
             for (size_t i = 0; i < expected.size(); ++i) {

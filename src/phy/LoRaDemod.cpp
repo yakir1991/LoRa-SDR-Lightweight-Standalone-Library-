@@ -45,13 +45,15 @@ void lora_demod_free(lora_demod_workspace* ws)
 
 size_t lora_demodulate(lora_demod_workspace* ws,
                        const std::complex<float>* samples, size_t sample_count,
-                       uint16_t* out_symbols, unsigned osr)
+                       uint16_t* out_symbols, unsigned osr,
+                       uint8_t* out_sync)
 {
     const size_t N = ws->N;                    // base samples per symbol
     const size_t step = N * osr;                // oversampled samples per symbol
-    const size_t num_symbols = sample_count / step;
+    const size_t total_symbols = sample_count / step;
+    const bool have_sync = total_symbols >= 2;
 
-    const size_t est_syms = std::min(num_symbols, size_t(2));
+    const size_t est_syms = std::min(total_symbols, size_t(2));
     float sum_index = 0.0f;
     float phase_diff = 0.0f;
     float prev_phase = 0.0f;
@@ -111,7 +113,9 @@ size_t lora_demodulate(lora_demod_workspace* ws,
 
     int t_off = static_cast<int>(std::round(ws->metrics.time_offset));
     float rate = -2.0f * float(M_PI) * ws->metrics.cfo / static_cast<float>(N);
-    for (size_t s = 0; s < num_symbols; ++s) {
+    uint16_t sw0 = 0, sw1 = 0;
+    size_t out_idx = 0;
+    for (size_t s = 0; s < total_symbols; ++s) {
         size_t base = s * step;
         if (t_off > 0) {
             if (base + size_t(t_off) + step <= sample_count)
@@ -135,10 +139,36 @@ size_t lora_demodulate(lora_demod_workspace* ws,
         }
         float p, pav, findex;
         size_t idx = ws->detector->detect(p, pav, findex);
-        out_symbols[s] = static_cast<uint16_t>(idx);
+        if (have_sync) {
+            if (s == 0)
+                sw0 = static_cast<uint16_t>(idx);
+            else if (s == 1)
+                sw1 = static_cast<uint16_t>(idx);
+            else
+                out_symbols[out_idx++] = static_cast<uint16_t>(idx);
+        } else {
+            out_symbols[out_idx++] = static_cast<uint16_t>(idx);
+        }
     }
 
-    return num_symbols;
+    if (out_sync) {
+        if (have_sync) {
+            unsigned sf_bits = 0;
+            size_t tmp = N;
+            while (tmp > 1) {
+                tmp >>= 1;
+                ++sf_bits;
+            }
+            unsigned shift = sf_bits > 4 ? (sf_bits - 4) : 0;
+            uint8_t hi = static_cast<uint8_t>(sw0 >> shift) & 0x0f;
+            uint8_t lo = static_cast<uint8_t>(sw1 >> shift) & 0x0f;
+            *out_sync = static_cast<uint8_t>((hi << 4) | lo);
+        } else {
+            *out_sync = 0;
+        }
+    }
+
+    return have_sync ? out_idx : total_symbols;
 }
 
 } // namespace lora_phy

@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    std::vector<std::complex<float>> iq(symbol_count * N);
+    std::vector<std::complex<float>> iq((symbol_count + 2) * N);
     ssize_t sample_count =
         modulate(&ws, symbols.data(), symbol_count, iq.data(), iq.size());
     if (sample_count < 0) {
