@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <lora_phy/ChirpGenerator.hpp>
 #include <lora_phy/phy.hpp>
@@ -12,6 +13,9 @@ size_t lora_modulate(const uint16_t* symbols, size_t symbol_count,
     const size_t step = N * osr;
     float phase = 0.0f;
     const float bw_scale = lora_phy::bw_scale(bw);
+
+    // Clamp user requested amplitude to the canonical IQ range of [-1.0, 1.0].
+    amplitude = std::max(-1.0f, std::min(1.0f, amplitude));
 
     unsigned shift = sf > 4 ? (sf - 4) : 0;
     const uint16_t sw0 = static_cast<uint16_t>((sync >> 4) << shift);
