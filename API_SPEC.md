@@ -1,4 +1,8 @@
 # API Specification
+*Version:* 1.0  
+*Date:* 2025-02-14
+
+See also: [Porting Notes](PORTING_NOTES.md), [Third-Party Components](THIRD_PARTY.md), [Test Plan](TEST_PLAN.md)
 
 ## Workspace
 
