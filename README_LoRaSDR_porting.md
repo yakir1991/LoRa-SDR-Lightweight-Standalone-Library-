@@ -165,7 +165,11 @@ regenerate vectors if any convention is adjusted.
 
 - **CFO/TO**: add coarse/fine estimation & compensation (phasor/time-shift) if required.
 - **OSR > 1**: oversampling and FFT window alignment.
-- **Windows/Filters**: lightweight time-domain window pre-FFT if beneficial.
+- **Windows/Filters**: lightweight time-domain window pre-FFT if beneficial. The
+  library now supports an optional Hann window; configure via
+  `lora_params.window` or `lora_demod_init(..., window_type::window_hann)` and
+  regenerate vectors with `scripts/generate_vectors.sh` to compare windowed and
+  unwindowed behaviour.
 - **Additional BW**: 250/500 kHz support.
 - **LoRaWAN**: use the PHY as a base for LoRaWAN frame building/parsing later on.
 

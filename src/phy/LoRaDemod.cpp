@@ -6,11 +6,23 @@
 
 namespace lora_phy {
 
-void lora_demod_init(lora_demod_workspace* ws, unsigned sf)
+void lora_demod_init(lora_demod_workspace* ws, unsigned sf,
+                     window_type win)
 {
     ws->N = size_t(1) << sf;
     ws->fft_in = new std::complex<float>[ws->N];
     ws->fft_out = new std::complex<float>[ws->N];
+    ws->window = new float[ws->N];
+    ws->window_kind = win;
+    if (win == window_type::window_hann) {
+        for (size_t i = 0; i < ws->N; ++i) {
+            ws->window[i] =
+                0.5f - 0.5f * std::cos(2.0f * float(M_PI) * static_cast<float>(i) /
+                                        (static_cast<float>(ws->N) - 1.0f));
+        }
+    } else {
+        for (size_t i = 0; i < ws->N; ++i) ws->window[i] = 1.0f;
+    }
     kissfft<float>::init(ws->fft_plan, ws->N, false);
     ws->fft = new kissfft<float>(ws->fft_plan);
     ws->detector = new LoRaDetector<float>(ws->N, ws->fft_in, ws->fft_out, *ws->fft);
@@ -22,10 +34,12 @@ void lora_demod_free(lora_demod_workspace* ws)
     delete ws->fft;
     delete[] ws->fft_in;
     delete[] ws->fft_out;
+    delete[] ws->window;
     ws->detector = nullptr;
     ws->fft = nullptr;
     ws->fft_in = nullptr;
     ws->fft_out = nullptr;
+    ws->window = nullptr;
     ws->N = 0;
 }
 
@@ -51,8 +65,12 @@ size_t lora_demodulate(lora_demod_workspace* ws,
         unsigned best_t = 0;
         std::complex<float> best_bin;
         for (unsigned t = 0; t < osr; ++t) {
-            for (size_t i = 0; i < N; ++i)
-                ws->detector->feed(i, sym_base[t + i * osr]);
+            for (size_t i = 0; i < N; ++i) {
+                std::complex<float> samp = sym_base[t + i * osr];
+                if (ws->window_kind != window_type::window_none)
+                    samp *= ws->window[i];
+                ws->detector->feed(i, samp);
+            }
             float p, pav, findex;
             size_t idx = ws->detector->detect(p, pav, findex);
             if (p > best_p) {
@@ -106,7 +124,11 @@ size_t lora_demodulate(lora_demod_workspace* ws,
             float ph = start + rate * static_cast<float>(i);
             float cs = std::cos(ph);
             float sn = std::sin(ph);
-            ws->detector->feed(i, sym_samps[i * osr] * std::complex<float>(cs, sn));
+            std::complex<float> samp = sym_samps[i * osr] *
+                                       std::complex<float>(cs, sn);
+            if (ws->window_kind != window_type::window_none)
+                samp *= ws->window[i];
+            ws->detector->feed(i, samp);
         }
         float p, pav, findex;
         size_t idx = ws->detector->detect(p, pav, findex);
