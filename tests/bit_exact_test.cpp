@@ -133,7 +133,9 @@ int main() {
 
         std::vector<uint16_t> demod(data_symbols);
         lora_phy::lora_demod_workspace ws{};
-        lora_phy::lora_demod_init(&ws, p.sf);
+        std::vector<std::complex<float>> scratch(sample_count);
+        lora_phy::lora_demod_init(&ws, p.sf, lora_phy::window_type::window_none,
+                                   scratch.data(), scratch.size());
         lora_phy::lora_demodulate(&ws, dechirped.data(), sample_count,
                                    demod.data(), 1, nullptr);
         lora_phy::lora_demod_free(&ws);

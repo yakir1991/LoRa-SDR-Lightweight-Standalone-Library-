@@ -48,14 +48,17 @@ int main(int argc, char** argv) {
     lora_phy::init(&ws, &params);
 
     std::vector<uint16_t> symbols(payload.size() * 2 + 32);
-    ssize_t sc = lorawan::build_frame(&ws, frame, symbols.data(), symbols.size());
+    std::vector<uint8_t> tmp(symbols.size() / 2 + 8);
+    ssize_t sc = lorawan::build_frame(&ws, frame, symbols.data(), symbols.size(),
+                                      tmp.data(), tmp.size());
     if (sc < 0) {
         std::cerr << "build_frame failed\n";
         return 2;
     }
 
     lorawan::Frame parsed;
-    ssize_t pc = lorawan::parse_frame(&ws, symbols.data(), static_cast<size_t>(sc), parsed);
+    ssize_t pc = lorawan::parse_frame(&ws, symbols.data(), static_cast<size_t>(sc),
+                                      parsed, tmp.data(), tmp.size());
     if (pc < 0) {
         std::cerr << "parse_frame failed\n";
         return 3;

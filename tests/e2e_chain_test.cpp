@@ -79,6 +79,7 @@ int main() {
         // dechirp the samples before demodulation
         std::vector<std::complex<float>> dechirped(sample_count);
         std::vector<std::complex<float>> down(samples_per_symbol);
+        std::vector<std::complex<float>> scratch(sample_count);
         float phase = 0.0f;
         float scale = lora_phy::bw_scale(static_cast<lora_phy::bandwidth>(p.bw));
         genChirp(down.data(), static_cast<int>(samples_per_symbol), 1,
@@ -94,7 +95,8 @@ int main() {
         // demodulate back
         std::vector<uint16_t> demod(symbol_count);
         lora_phy::lora_demod_workspace ws{};
-        lora_phy::lora_demod_init(&ws, p.sf);
+        lora_phy::lora_demod_init(&ws, p.sf, lora_phy::window_type::window_none,
+                                   scratch.data(), scratch.size());
         lora_phy::lora_demodulate(&ws, dechirped.data(), sample_count, demod.data(), 1,
                                    nullptr);
         lora_phy::lora_demod_free(&ws);

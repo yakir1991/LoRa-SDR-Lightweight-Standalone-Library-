@@ -50,7 +50,9 @@ int main() {
 
     // Demodulate and ensure sync word is recovered
     lora_phy::lora_demod_workspace ws{};
-    lora_phy::lora_demod_init(&ws, 7);
+    std::vector<std::complex<float>> scratch(sample_count);
+    lora_phy::lora_demod_init(&ws, 7, lora_phy::window_type::window_none,
+                              scratch.data(), scratch.size());
     uint8_t out_sync = 0;
     std::vector<uint16_t> dummy(1);
     size_t produced = lora_phy::lora_demodulate(&ws, samples.data(),

@@ -108,17 +108,22 @@ parse frames.
 ### `ssize_t lorawan::build_frame(lora_phy::lora_workspace *ws,
                                   const lorawan::Frame &frame,
                                   uint16_t *symbols,
-                                  size_t symbol_cap);`
+                                  size_t symbol_cap,
+                                  uint8_t *tmp_bytes,
+                                  size_t tmp_cap);`
 Serialises `frame`, appends a CRC32-based MIC and encodes the resulting buffer
-into LoRa symbols using `lora_phy::encode`.  Returns the number of symbols
-written or a negative value on error.
+into LoRa symbols using `lora_phy::encode`.  `tmp_bytes` must point to a caller
+provided workspace for the intermediate byte representation.  Returns the
+number of symbols written or a negative value on error.
 
 ### `ssize_t lorawan::parse_frame(lora_phy::lora_workspace *ws,
                                   const uint16_t *symbols, size_t count,
-                                  lorawan::Frame &out);`
+                                  lorawan::Frame &out,
+                                  uint8_t *tmp_bytes,
+                                  size_t tmp_cap);`
 Decodes symbols with `lora_phy::decode`, verifies the MIC and populates `out`
-with the parsed fields.  The return value is the number of payload bytes or a
-negative error code.
+with the parsed fields using `tmp_bytes` as scratch space.  The return value is
+the number of payload bytes or a negative error code.
 
 ## Buffer Ownership and Error Handling
 

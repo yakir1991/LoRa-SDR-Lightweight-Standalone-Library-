@@ -43,7 +43,9 @@ int main() {
     }
 
     lora_phy::lora_demod_workspace ws{};
-    lora_phy::lora_demod_init(&ws, 2);
+    std::vector<std::complex<float>> scratch(sample_count);
+    lora_phy::lora_demod_init(&ws, 2, lora_phy::window_type::window_none,
+                              scratch.data(), scratch.size());
 
     std::vector<uint16_t> symbols(1);
     lora_phy::lora_demodulate(&ws, samples.data(), sample_count, symbols.data(), 1);

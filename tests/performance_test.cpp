@@ -81,6 +81,7 @@ int main() {
 
         std::vector<std::complex<float>> samples(sample_count);
         std::vector<std::complex<float>> dechirped(sample_count);
+        std::vector<std::complex<float>> scratch(sample_count);
         std::vector<uint16_t> demod(symbol_count);
 
         // precompute downchirp for dechirp
@@ -92,7 +93,8 @@ int main() {
                  scale);
 
         lora_phy::lora_demod_workspace ws{};
-        lora_phy::lora_demod_init(&ws, p.sf);
+        lora_phy::lora_demod_init(&ws, p.sf, lora_phy::window_type::window_none,
+                                   scratch.data(), scratch.size());
 
         auto t_start = std::chrono::high_resolution_clock::now();
         unsigned long long c_start = __rdtsc();
