@@ -70,6 +70,12 @@ def main() -> None:
     )
     parser.add_argument("--cfo-bins", type=float, default=0.0, help="CFO in FFT bins")
     parser.add_argument("--time-offset", type=float, default=0.0, help="Sample time offset")
+    parser.add_argument(
+        "--window",
+        default="none",
+        choices=["none", "hann"],
+        help="Analysis window to apply during demodulation",
+    )
     args = parser.parse_args()
 
     vector_bin = pathlib.Path(args.binary).resolve()
@@ -88,6 +94,8 @@ def main() -> None:
         f"--out={out_dir}",
         f"--osr={args.osr}",
     ]
+    if args.window != "none":
+        cmd.append(f"--window={args.window}")
     run(cmd)
 
     iq_path = out_dir / "iq_samples.csv"

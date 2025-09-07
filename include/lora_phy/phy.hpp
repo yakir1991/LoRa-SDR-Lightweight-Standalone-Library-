@@ -25,11 +25,17 @@ namespace lora_phy {
  * caller retains ownership of this structure; the library copies the values at
  * initialisation time.
  */
+enum class window_type {
+    window_none,
+    window_hann,
+};
+
 struct lora_params {
     unsigned sf{}; ///< Spreading factor
     unsigned bw{}; ///< Bandwidth index
     unsigned cr{}; ///< Coding rate index
     unsigned osr{1}; ///< Oversampling ratio
+    window_type window{window_type::window_none}; ///< Optional analysis window
 };
 
 /**
@@ -53,6 +59,9 @@ struct lora_workspace {
     uint16_t*            symbol_buf{}; ///< N entries
     std::complex<float>* fft_in{};     ///< N complex samples
     std::complex<float>* fft_out{};    ///< N*osr complex samples for modulation/demodulation
+
+    float*               window{};     ///< N analysis window coefficients
+    window_type          window_kind{window_type::window_none};
 
     kissfft_plan<float>  plan_fwd{};   ///< forward FFT plan
     kissfft_plan<float>  plan_inv{};   ///< inverse FFT plan
@@ -141,6 +150,8 @@ struct lora_demod_workspace {
     size_t N{};
     std::complex<float>* fft_in{};
     std::complex<float>* fft_out{};
+    float* window{};
+    window_type window_kind{window_type::window_none};
     kissfft_plan<float> fft_plan{}; // preallocated plan for kissfft
     kissfft<float>* fft{};          // fft instance using the plan
     LoRaDetector<float>* detector{};
@@ -148,7 +159,8 @@ struct lora_demod_workspace {
 };
 
 // Initialise and clean up the demodulator workspace.
-void lora_demod_init(lora_demod_workspace* ws, unsigned sf);
+void lora_demod_init(lora_demod_workspace* ws, unsigned sf,
+                     window_type win = window_type::window_none);
 void lora_demod_free(lora_demod_workspace* ws);
 
 // Modulate an array of symbols into complex baseband samples.

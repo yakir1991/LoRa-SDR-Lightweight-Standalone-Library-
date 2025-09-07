@@ -30,6 +30,19 @@ int init(lora_workspace* ws, const lora_params* cfg) {
     kissfft<float>::init(ws->plan_inv, N, true);
     ws->metrics = {};
     ws->osr = cfg->osr ? cfg->osr : 1u;
+    ws->window_kind = cfg->window;
+    if (ws->window) {
+        if (ws->window_kind == window_type::window_hann) {
+            for (int i = 0; i < N; ++i) {
+                ws->window[i] =
+                    0.5f - 0.5f * std::cos(2.0f * float(M_PI) *
+                                            static_cast<float>(i) /
+                                            (static_cast<float>(N) - 1.0f));
+            }
+        } else {
+            for (int i = 0; i < N; ++i) ws->window[i] = 1.0f;
+        }
+    }
     return 0;
 }
 
@@ -85,8 +98,12 @@ void estimate_offsets(lora_workspace* ws,
         unsigned best_t = 0;
         std::complex<float> best_bin;
         for (unsigned t = 0; t < osr; ++t) {
-            for (size_t i = 0; i < N; ++i)
-                detector.feed(i, sym[t + i * osr]);
+            for (size_t i = 0; i < N; ++i) {
+                std::complex<float> samp = sym[t + i * osr];
+                if (ws->window_kind != window_type::window_none && ws->window)
+                    samp *= ws->window[i];
+                detector.feed(i, samp);
+            }
             float p, pav, findex;
             size_t idx = detector.detect(p, pav, findex);
             if (p > best_p) {
@@ -192,7 +209,11 @@ ssize_t demodulate(lora_workspace* ws,
             float ph = start + rate * static_cast<float>(i);
             float cs = std::cos(ph);
             float sn = std::sin(ph);
-            detector.feed(i, sym[i * osr] * ws->fft_out[i] * std::complex<float>(cs, sn));
+            std::complex<float> samp =
+                sym[i * osr] * ws->fft_out[i] * std::complex<float>(cs, sn);
+            if (ws->window_kind != window_type::window_none && ws->window)
+                samp *= ws->window[i];
+            detector.feed(i, samp);
         }
         float p, pav, findex;
         size_t idx = detector.detect(p, pav, findex);

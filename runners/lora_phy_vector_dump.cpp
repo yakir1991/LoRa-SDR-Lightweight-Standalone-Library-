@@ -17,7 +17,7 @@ namespace {
 void usage(const char* prog) {
     std::cerr << "Usage: " << prog
               << " --out=DIR [--sf=N] [--bytes=N] [--seed=N] [--osr=N]"
-              << " [--dump=STAGE,...]\n";
+              << " [--dump=STAGE,...] [--window=hann]\n";
 }
 
 } // namespace
@@ -29,6 +29,7 @@ int main(int argc, char** argv) {
     size_t byte_count = 16;
     std::string out_dir;
     std::set<std::string> dumps;
+    window_type win = window_type::window_none;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -44,6 +45,12 @@ int main(int argc, char** argv) {
             out_dir = arg.substr(6);
         } else if (arg.rfind("--dump=", 0) == 0) {
             dumps.insert(arg.substr(7));
+        } else if (arg.rfind("--window=", 0) == 0) {
+            std::string w = arg.substr(9);
+            if (w == "hann")
+                win = window_type::window_hann;
+            else
+                win = window_type::window_none;
         } else if (arg == "--help" || arg == "-h") {
             usage(argv[0]);
             return 0;
@@ -90,17 +97,20 @@ int main(int argc, char** argv) {
     std::vector<uint8_t> deinterleave(cw_count, 0);
     std::vector<uint8_t> decoded(byte_count);
     std::vector<std::complex<float>> fft_in(N), fft_out(N * osr);
+    std::vector<float> window(N);
     std::vector<std::complex<float>> samples(symbol_count * N * osr);
 
     lora_workspace ws{};
     ws.symbol_buf = post_interleave.data();
     ws.fft_in = fft_in.data();
     ws.fft_out = fft_out.data();
+    ws.window = window.data();
     lora_params params{};
     params.sf = sf;
     params.bw = 0;
     params.cr = 0;
     params.osr = osr;
+    params.window = win;
     if (init(&ws, &params) != 0) {
         std::cerr << "Failed to initialise workspace\n";
         return 1;
