@@ -10,6 +10,7 @@ with SHA256 checksums is written so downstream tests can verify the data.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -65,10 +66,13 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument(
         "--binary",
-        default=os.environ.get("LORASDR_AWGN_BIN", "external/lorasdr_orig/build/lora_awgn_sim"),
+        default=os.environ.get("LORASDR_AWGN_BIN"),
         help="Path to the lora_awgn_sim binary",
     )
     args = parser.parse_args()
+
+    if args.binary is None:
+        parser.error("AWGN simulation binary not specified (use --binary or set LORASDR_AWGN_BIN)")
 
     awgn_bin = pathlib.Path(args.binary).resolve()
     if not awgn_bin.is_file():
@@ -92,7 +96,11 @@ def main() -> None:
     for path in sorted(out_dir.glob("*")):
         if path.name == "manifest.json":
             continue
-        files.append(FileRecord(path.name, compute_checksum(path)))
+        b64_path = path.with_suffix(path.suffix + ".b64")
+        with path.open("rb") as src, b64_path.open("wb") as dst:
+            base64.encode(src, dst)
+        path.unlink()
+        files.append(FileRecord(b64_path.name, compute_checksum(b64_path)))
 
     manifest = Manifest(args.sf, args.cr, args.snr, args.seed, files)
     with (out_dir / "manifest.json").open("w") as handle:

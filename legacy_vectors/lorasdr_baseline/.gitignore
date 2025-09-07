@@ -1,3 +1,4 @@
 # Ignore generated baseline vectors and manifests
 *
 !.gitignore
+!*.b64
