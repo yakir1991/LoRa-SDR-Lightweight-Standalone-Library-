@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <new>
+#include <vector>
 
 namespace lora_phy {
 
@@ -50,6 +51,25 @@ size_t lora_demodulate(lora_demod_workspace* ws,
     const size_t total_symbols = sample_count / step;
     const bool have_sync = total_symbols >= 2;
 
+    // Ensure incoming samples fit within the canonical [-1.0, 1.0] range.
+    const std::complex<float>* norm_samples = samples;
+    std::vector<std::complex<float>> scaled;
+    float max_amp = 0.0f;
+    for (size_t i = 0; i < sample_count; ++i) {
+        float r = std::abs(samples[i].real());
+        float im = std::abs(samples[i].imag());
+        float m = std::max(r, im);
+        if (m > max_amp) max_amp = m;
+    }
+    if (max_amp > 1.0f) {
+        float scale = 1.0f / max_amp;
+        scaled.resize(sample_count);
+        for (size_t i = 0; i < sample_count; ++i) {
+            scaled[i] = samples[i] * scale;
+        }
+        norm_samples = scaled.data();
+    }
+
     const size_t est_syms = std::min(total_symbols, size_t(2));
     float sum_index = 0.0f;
     float phase_diff = 0.0f;
@@ -57,7 +77,7 @@ size_t lora_demodulate(lora_demod_workspace* ws,
     bool have_prev = false;
     unsigned sum_t = 0;
     for (size_t s = 0; s < est_syms; ++s) {
-        const std::complex<float>* sym_base = samples + s * step;
+        const std::complex<float>* sym_base = norm_samples + s * step;
         float best_p = -1e30f;
         size_t best_idx = 0;
         float best_fi = 0.0f;
@@ -121,7 +141,7 @@ size_t lora_demodulate(lora_demod_workspace* ws,
             size_t off = size_t(-t_off);
             if (off <= base) base -= off;
         }
-        const std::complex<float>* sym_samps = samples + base;
+        const std::complex<float>* sym_samps = norm_samples + base;
         float start = rate * (static_cast<float>(s * N) +
                               static_cast<float>(t_off) / static_cast<float>(osr));
         for (size_t i = 0; i < N; ++i) {
