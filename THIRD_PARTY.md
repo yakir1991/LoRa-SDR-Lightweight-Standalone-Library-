@@ -1,38 +1,17 @@
-# Third-Party Licenses
+# Third-Party Components
+
+This project incorporates external code and artifacts. The sections below credit their sources, summarize any local modifications, and provide reproduction instructions for generated vectors where applicable.
 
 ## KISS FFT
+- **Source:** [https://github.com/mborgerding/kissfft](https://github.com/mborgerding/kissfft)
+- **License:** BSD-3-Clause
+- **Usage:** Provides FFT routines for modulation and demodulation. The project embeds a minimal header-only adaptation at `include/lora_phy/kissfft.hh` (legacy copy in `legacy/kissfft.hh`).
+- **Local modifications:** Unused features were removed and the interface was trimmed for static allocation and standalone use.
 
-Portions of this project are derived from the [KISS FFT](https://github.com/mborgerding/kissfft) library.
+## LoRa-SDR (original project)
+- **Source:** [https://github.com/myriadrf/LoRa-SDR](https://github.com/myriadrf/LoRa-SDR)
+- **License:** Boost Software License 1.0
+- **Usage:** The standalone library originates from the LoRa-SDR reference implementation. Portions of the PHY processing chain and the baseline test vectors were derived from it.
+- **Local modifications:** Code was refactored to remove the Pothos framework, rely solely on KISS FFT, and avoid runtime allocations.
+- **Vector regeneration:** Baseline vectors can be reproduced using `scripts/generate_baseline_vectors.py`, which invokes `scripts/generate_vectors.sh` and the original LoRa-SDR binary. The generated vectors are stored under `legacy_vectors/lorasdr_baseline`.
 
-KISS FFT license (BSD-3-Clause):
-
-Copyright (c) 2003-2010 Mark Borgerding. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-3. Neither the name of the copyright holder nor the names of its contributors
-   may be used to endorse or promote products derived from this software
-   without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-
-The primary project code is licensed under the Boost Software License 1.0
-(as indicated by SPDX identifiers in source files). This permissive license
-is compatible with the BSD-3-Clause license used by KISS FFT, allowing the
-inclusion and redistribution of BSD-licensed components within this project.
