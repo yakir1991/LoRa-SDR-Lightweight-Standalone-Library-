@@ -1,0 +1,4 @@
+run_id,profile,sf,N,pps,cycles_per_symbol
+run1,sf7_bw125_cr45,7,128,2290.05,19059.5
+run1,sf9_bw250_cr48,9,512,537.285,81237
+run1,sf12_bw500_cr45,12,4096,65.041,671077

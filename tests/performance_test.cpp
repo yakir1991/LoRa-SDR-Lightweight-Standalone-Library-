@@ -64,9 +64,13 @@ int main() {
     const size_t PACKETS = 1000;
     const size_t PAYLOAD_SIZE = 32;
 
+    const char* env_run = std::getenv("RUN_ID");
+    std::string run_id = env_run ? env_run : "run";
+    std::string path = "logs/performance_" + run_id + ".csv";
+
     std::system("mkdir -p logs");
-    std::ofstream csv("logs/performance.csv");
-    csv << "profile,sf,N,pps,cycles_per_symbol\n";
+    std::ofstream csv(path);
+    csv << "run_id,profile,sf,N,pps,cycles_per_symbol\n";
 
     for (const auto& p : profiles) {
         // deterministic payload
@@ -125,10 +129,11 @@ int main() {
         double cycles_per_symbol = cycles / (static_cast<double>(symbol_count) * PACKETS);
         unsigned N = 1u << p.sf;
 
-        csv << p.name << ',' << p.sf << ',' << N << ',' << pps << ','
-            << cycles_per_symbol << '\n';
-        std::cout << p.name << ": " << pps << " pps, "
-                  << cycles_per_symbol << " cycles/symbol" << std::endl;
+        csv << run_id << ',' << p.name << ',' << p.sf << ',' << N << ','
+            << pps << ',' << cycles_per_symbol << '\n';
+        std::cout << '[' << run_id << "] " << p.name << ": " << pps
+                  << " pps, " << cycles_per_symbol << " cycles/symbol"
+                  << std::endl;
     }
 
     return 0;
