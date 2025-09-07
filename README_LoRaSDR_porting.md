@@ -171,7 +171,8 @@ regenerate vectors if any convention is adjusted.
   regenerate vectors with `scripts/generate_vectors.sh` to compare windowed and
   unwindowed behaviour.
 - **Additional BW**: 250/500 kHz support.
-- **LoRaWAN**: use the PHY as a base for LoRaWAN frame building/parsing later on.
+- **LoRaWAN**: use the PHY as a base for LoRaWAN frame building/parsing later on. See
+  the “LoRaWAN helpers” section in `API_SPEC.md` for the emerging interface.
 
 ---
 
