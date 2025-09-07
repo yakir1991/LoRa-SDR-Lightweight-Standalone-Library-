@@ -5,7 +5,7 @@
 #include <Pothos/Framework.hpp>
 #include <iostream>
 #include <cstring>
-#include "LoRaCodes.hpp"
+#include <lora_phy/LoRaCodes.hpp>
 
 /***********************************************************************
  * |PothosDoc LoRa Decoder

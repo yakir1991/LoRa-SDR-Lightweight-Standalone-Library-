@@ -10,17 +10,15 @@ option(BUILD_TESTS "Build tests" ON)
 option(BUILD_RUNNERS "Build runners" ON)
 
 file(GLOB LORA_PHY_SOURCES CONFIGURE_DEPENDS src/phy/*.cpp)
-file(GLOB LORAWAN_SOURCES CONFIGURE_DEPENDS src/lorawan/*.cpp)
-list(APPEND LORA_PHY_SOURCES ${LORAWAN_SOURCES})
 
 add_library(lora_phy STATIC ${LORA_PHY_SOURCES})
 
 target_include_directories(lora_phy PUBLIC include)
 
-# ensure headers like kissfft.hh are part of the target for IDEs
-target_sources(lora_phy PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/lora_phy/kissfft.hh
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/lorawan/lorawan.hpp)
+  # ensure headers like kissfft.hh are part of the target for IDEs
+  target_sources(lora_phy PUBLIC
+      ${CMAKE_CURRENT_SOURCE_DIR}/include/lora_phy/kissfft.hh
+  )
 
 if(BUILD_RUNNERS)
     add_executable(lora_phy_vector_dump runners/lora_phy_vector_dump.cpp)
@@ -34,9 +32,6 @@ if(BUILD_RUNNERS)
     add_executable(rx_runner runners/rx_runner.cpp)
     target_link_libraries(rx_runner PRIVATE lora_phy)
 
-    # Simple round-trip test for LoRaWAN frame helpers
-    add_executable(lorawan_roundtrip runners/lorawan_roundtrip.cpp)
-    target_link_libraries(lorawan_roundtrip PRIVATE lora_phy)
 endif()
 
 if(BUILD_TESTS)

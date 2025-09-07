@@ -6,7 +6,7 @@
 #include <Pothos/Proxy.hpp>
 #include <Pothos/Remote.hpp>
 #include <iostream>
-#include "LoRaCodes.hpp"
+#include <lora_phy/LoRaCodes.hpp>
 #include <json.hpp>
 
 using json = nlohmann::json;
