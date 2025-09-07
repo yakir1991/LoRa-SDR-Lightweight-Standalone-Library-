@@ -180,11 +180,17 @@ struct lora_demod_workspace {
     kissfft<float>* fft{};          ///< fft instance using the plan
     LoRaDetector<float>* detector{};
     lora_metrics metrics{};         ///< estimated metrics for last demod
+    std::complex<float>* scratch{}; ///< caller-provided scratch buffer
+    size_t scratch_len{};           ///< number of elements in scratch
 };
 
-// Initialise and clean up the demodulator workspace.
+// Initialise and clean up the demodulator workspace.  Callers must provide a
+// scratch buffer of at least @p max_samples elements for temporary storage
+// during normalisation.  No memory is allocated by these routines.
 void lora_demod_init(lora_demod_workspace* ws, unsigned sf,
-                     window_type win = window_type::window_none);
+                     window_type win = window_type::window_none,
+                     std::complex<float>* scratch = nullptr,
+                     size_t max_samples = 0);
 void lora_demod_free(lora_demod_workspace* ws);
 
 // Modulate an array of symbols into complex baseband samples.

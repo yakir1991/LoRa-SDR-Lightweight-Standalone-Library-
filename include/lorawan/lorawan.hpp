@@ -49,13 +49,17 @@ uint32_t compute_mic(const uint8_t* data, size_t len);
 ssize_t build_frame(lora_phy::lora_workspace* ws,
                     const Frame& frame,
                     uint16_t* symbols,
-                    size_t symbol_cap);
+                    size_t symbol_cap,
+                    uint8_t* tmp_bytes,
+                    size_t tmp_cap);
 
 // Parse symbols back into a Frame verifying the MIC
 ssize_t parse_frame(lora_phy::lora_workspace* ws,
                     const uint16_t* symbols,
                     size_t symbol_count,
-                    Frame& out);
+                    Frame& out,
+                    uint8_t* tmp_bytes,
+                    size_t tmp_cap);
 
 } // namespace lorawan
 

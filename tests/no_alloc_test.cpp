@@ -47,6 +47,7 @@ int main() {
     const size_t sample_count = (symbol_count + 2) * samples_per_symbol;
 
     std::vector<std::complex<float>> samples(sample_count);
+    std::vector<std::complex<float>> scratch(sample_count);
 
     {
         alloc_tracker::Guard guard;
@@ -76,7 +77,8 @@ int main() {
 
     {
         alloc_tracker::Guard guard;
-        lora_phy::lora_demod_init(&ws, sf);
+        lora_phy::lora_demod_init(&ws, sf, lora_phy::window_type::window_none,
+                                  scratch.data(), scratch.size());
         if (guard.count() != 0) {
             std::cerr << "Allocation occurred in demod init" << std::endl;
             return 1;

@@ -4,12 +4,13 @@
 #include <algorithm>
 #include <cmath>
 #include <new>
-#include <vector>
 
 namespace lora_phy {
 
 void lora_demod_init(lora_demod_workspace* ws, unsigned sf,
-                     window_type win)
+                     window_type win,
+                     std::complex<float>* scratch,
+                     size_t max_samples)
 {
     ws->N = size_t(1) << sf;
     ws->window_kind = win;
@@ -26,6 +27,8 @@ void lora_demod_init(lora_demod_workspace* ws, unsigned sf,
     ws->fft = new (ws->fft_buf) kissfft<float>(ws->fft_plan);
     ws->detector =
         new (ws->detector_buf) LoRaDetector<float>(ws->N, ws->fft_in, ws->fft_out, *ws->fft);
+    ws->scratch = scratch;
+    ws->scratch_len = max_samples;
 }
 
 void lora_demod_free(lora_demod_workspace* ws)
@@ -39,6 +42,8 @@ void lora_demod_free(lora_demod_workspace* ws)
         ws->fft = nullptr;
     }
     ws->N = 0;
+    ws->scratch = nullptr;
+    ws->scratch_len = 0;
 }
 
 size_t lora_demodulate(lora_demod_workspace* ws,
@@ -53,7 +58,6 @@ size_t lora_demodulate(lora_demod_workspace* ws,
 
     // Ensure incoming samples fit within the canonical [-1.0, 1.0] range.
     const std::complex<float>* norm_samples = samples;
-    std::vector<std::complex<float>> scaled;
     float max_amp = 0.0f;
     for (size_t i = 0; i < sample_count; ++i) {
         float r = std::abs(samples[i].real());
@@ -62,12 +66,14 @@ size_t lora_demodulate(lora_demod_workspace* ws,
         if (m > max_amp) max_amp = m;
     }
     if (max_amp > 1.0f) {
-        float scale = 1.0f / max_amp;
-        scaled.resize(sample_count);
-        for (size_t i = 0; i < sample_count; ++i) {
-            scaled[i] = samples[i] * scale;
+        if (!ws->scratch || ws->scratch_len < sample_count) {
+            return 0;
         }
-        norm_samples = scaled.data();
+        float scale = 1.0f / max_amp;
+        for (size_t i = 0; i < sample_count; ++i) {
+            ws->scratch[i] = samples[i] * scale;
+        }
+        norm_samples = ws->scratch;
     }
 
     const size_t est_syms = std::min(total_symbols, size_t(2));
