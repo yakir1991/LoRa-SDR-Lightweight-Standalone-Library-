@@ -91,6 +91,35 @@ Returns a pointer to the metrics collected during the most recent processing
 call (`decode` or `demodulate`).  The caller must not free the returned pointer
 and it remains valid until the next call that updates the metrics.
 
+## LoRaWAN helpers
+
+An optional helper module in `include/lorawan/lorawan.hpp` provides small
+structures representing LoRaWAN headers along with utilities to build and
+parse frames.
+
+### Data structures
+
+* `lorawan::MHDR` – message header carrying the frame type and protocol major
+  version.
+* `lorawan::FHDR` – frame header containing device address, frame control,
+  frame counter and optional MAC commands (`fopts`).
+* `lorawan::Frame` – aggregates `MHDR`, `FHDR` and the FRMPayload bytes.
+
+### `ssize_t lorawan::build_frame(lora_phy::lora_workspace *ws,
+                                  const lorawan::Frame &frame,
+                                  uint16_t *symbols,
+                                  size_t symbol_cap);`
+Serialises `frame`, appends a CRC32-based MIC and encodes the resulting buffer
+into LoRa symbols using `lora_phy::encode`.  Returns the number of symbols
+written or a negative value on error.
+
+### `ssize_t lorawan::parse_frame(lora_phy::lora_workspace *ws,
+                                  const uint16_t *symbols, size_t count,
+                                  lorawan::Frame &out);`
+Decodes symbols with `lora_phy::decode`, verifies the MIC and populates `out`
+with the parsed fields.  The return value is the number of payload bytes or a
+negative error code.
+
 ## Buffer Ownership and Error Handling
 
 All input and output buffers are owned by the caller.  The library reads from or
