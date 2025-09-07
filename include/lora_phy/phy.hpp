@@ -13,6 +13,7 @@
 #include <sys/types.h>
 
 #include <lora_phy/kissfft.hh>
+#include <lora_phy/LoRaDetector.hpp>
 
 namespace lora_phy {
 
@@ -167,13 +168,16 @@ namespace lora_phy {
 
 // Workspace used by the demodulator to hold FFT buffers and detector instance.
 struct lora_demod_workspace {
+    static const size_t MAX_N = kissfft_utils::KISSFFT_MAX_N;
     size_t N{};
-    std::complex<float>* fft_in{};
-    std::complex<float>* fft_out{};
-    float* window{};
+    std::complex<float> fft_in[MAX_N];
+    std::complex<float> fft_out[MAX_N];
+    float window[MAX_N];
     window_type window_kind{window_type::window_none};
-    kissfft_plan<float> fft_plan{}; // preallocated plan for kissfft
-    kissfft<float>* fft{};          // fft instance using the plan
+    kissfft_plan<float> fft_plan{}; ///< preallocated plan for kissfft
+    alignas(kissfft<float>) unsigned char fft_buf[sizeof(kissfft<float>)];
+    alignas(LoRaDetector<float>) unsigned char detector_buf[sizeof(LoRaDetector<float>)];
+    kissfft<float>* fft{};          ///< fft instance using the plan
     LoRaDetector<float>* detector{};
     lora_metrics metrics{};         ///< estimated metrics for last demod
 };

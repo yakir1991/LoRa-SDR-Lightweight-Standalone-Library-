@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <new>
 
 namespace lora_phy {
 
@@ -10,9 +11,6 @@ void lora_demod_init(lora_demod_workspace* ws, unsigned sf,
                      window_type win)
 {
     ws->N = size_t(1) << sf;
-    ws->fft_in = new std::complex<float>[ws->N];
-    ws->fft_out = new std::complex<float>[ws->N];
-    ws->window = new float[ws->N];
     ws->window_kind = win;
     if (win == window_type::window_hann) {
         for (size_t i = 0; i < ws->N; ++i) {
@@ -24,22 +22,21 @@ void lora_demod_init(lora_demod_workspace* ws, unsigned sf,
         for (size_t i = 0; i < ws->N; ++i) ws->window[i] = 1.0f;
     }
     kissfft<float>::init(ws->fft_plan, ws->N, false);
-    ws->fft = new kissfft<float>(ws->fft_plan);
-    ws->detector = new LoRaDetector<float>(ws->N, ws->fft_in, ws->fft_out, *ws->fft);
+    ws->fft = new (ws->fft_buf) kissfft<float>(ws->fft_plan);
+    ws->detector =
+        new (ws->detector_buf) LoRaDetector<float>(ws->N, ws->fft_in, ws->fft_out, *ws->fft);
 }
 
 void lora_demod_free(lora_demod_workspace* ws)
 {
-    delete ws->detector;
-    delete ws->fft;
-    delete[] ws->fft_in;
-    delete[] ws->fft_out;
-    delete[] ws->window;
-    ws->detector = nullptr;
-    ws->fft = nullptr;
-    ws->fft_in = nullptr;
-    ws->fft_out = nullptr;
-    ws->window = nullptr;
+    if (ws->detector) {
+        ws->detector->~LoRaDetector<float>();
+        ws->detector = nullptr;
+    }
+    if (ws->fft) {
+        ws->fft->~kissfft<float>();
+        ws->fft = nullptr;
+    }
     ws->N = 0;
 }
 
