@@ -11,7 +11,7 @@
 ### In Scope (MVP)
 - **Modulation / Demodulation** pipeline: **dechirp → FFT → symbol decision**.
 - **Coding Layer**: data whitening, interleaving, Hamming (CR 4/5–4/8), Gray mapping, header/payload CRC, sync-word handling.
-- **Parameters**: SF7..SF12, BW = 125 kHz (initially), CR = 4/5..4/8, explicit header.
+ - **Parameters**: SF7..SF12, BW = 125/250/500 kHz, CR = 4/5..4/8, explicit header.
 
 ### Success Criteria
 - **One library target** with **KISS-FFT only** as dependency.

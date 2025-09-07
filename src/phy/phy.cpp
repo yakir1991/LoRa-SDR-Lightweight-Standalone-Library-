@@ -30,6 +30,7 @@ int init(lora_workspace* ws, const lora_params* cfg) {
     kissfft<float>::init(ws->plan_inv, N, true);
     ws->metrics = {};
     ws->osr = cfg->osr ? cfg->osr : 1u;
+    ws->bw = cfg->bw;
     ws->window_kind = cfg->window;
     if (ws->window) {
         if (ws->window_kind == window_type::window_hann) {
@@ -66,7 +67,7 @@ ssize_t modulate(lora_workspace* ws,
     if (!ws || !symbols || !iq) return -1;
     unsigned sf = deduce_sf(ws);
     unsigned osr = get_osr(ws);
-    size_t produced = lora_modulate(symbols, symbol_count, iq, sf, osr);
+    size_t produced = lora_modulate(symbols, symbol_count, iq, sf, osr, ws->bw);
     if (produced > iq_cap) return -1;
     return static_cast<ssize_t>(produced);
 }
@@ -192,8 +193,9 @@ ssize_t demodulate(lora_workspace* ws,
     float rate = -2.0f * float(M_PI) * ws->metrics.cfo / static_cast<float>(N);
     for (size_t s = 0; s < num_symbols; ++s) {
         float tmp = 0.0f;
+        float bw_scale = lora_phy::bw_scale(ws->bw);
         genChirp(ws->fft_out, static_cast<int>(N), 1, static_cast<int>(N),
-                 0.0f, true, 1.0f, tmp);
+                 0.0f, true, 1.0f, tmp, bw_scale);
         size_t base = s * step;
         if (t_off > 0) {
             if (base + size_t(t_off) + step <= sample_count)

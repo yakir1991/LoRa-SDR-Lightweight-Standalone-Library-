@@ -14,7 +14,7 @@ namespace {
 
 void usage(const char* prog) {
     std::cerr << "Usage: " << prog
-              << " [--in=FILE] [--sf=N] [--cr=N] [--report-offsets]\n";
+              << " [--in=FILE] [--sf=N] [--cr=N] [--bw=HZ] [--report-offsets]\n";
     std::cerr << "Input samples are float32 IQ pairs" << std::endl;
 }
 
@@ -34,6 +34,18 @@ int main(int argc, char** argv) {
             params.sf = static_cast<unsigned>(std::stoul(arg.substr(5)));
         } else if (arg.rfind("--cr=", 0) == 0) {
             params.cr = static_cast<unsigned>(std::stoul(arg.substr(5)));
+        } else if (arg.rfind("--bw=", 0) == 0) {
+            unsigned val = static_cast<unsigned>(std::stoul(arg.substr(5)));
+            if (val == 125000)
+                params.bw = bandwidth::bw_125;
+            else if (val == 250000)
+                params.bw = bandwidth::bw_250;
+            else if (val == 500000)
+                params.bw = bandwidth::bw_500;
+            else {
+                std::cerr << "Unsupported bandwidth\n";
+                return 1;
+            }
         } else if (arg == "--report-offsets") {
             report_offsets = true;
         } else if (arg == "--help" || arg == "-h") {

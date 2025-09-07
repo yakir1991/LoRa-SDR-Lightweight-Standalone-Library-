@@ -30,11 +30,28 @@ enum class window_type {
     window_hann,
 };
 
+/**
+ * Supported LoRa bandwidths in hertz.
+ */
+enum class bandwidth : unsigned {
+    bw_125 = 125000,
+    bw_250 = 250000,
+    bw_500 = 500000,
+};
+
+constexpr float bw_to_hz(bandwidth bw) {
+    return static_cast<float>(static_cast<unsigned>(bw));
+}
+
+constexpr float bw_scale(bandwidth bw) {
+    return bw_to_hz(bw) / 125000.0f;
+}
+
 struct lora_params {
-    unsigned sf{}; ///< Spreading factor
-    unsigned bw{}; ///< Bandwidth index
-    unsigned cr{}; ///< Coding rate index
-    unsigned osr{1}; ///< Oversampling ratio
+    unsigned sf{};                   ///< Spreading factor
+    bandwidth bw{bandwidth::bw_125}; ///< Operating bandwidth
+    unsigned cr{};                   ///< Coding rate index
+    unsigned osr{1};                 ///< Oversampling ratio
     window_type window{window_type::window_none}; ///< Optional analysis window
 };
 
@@ -68,6 +85,7 @@ struct lora_workspace {
 
     lora_metrics         metrics{};    ///< updated by processing functions
     unsigned             osr{1};       ///< oversampling ratio stored during init
+    bandwidth           bw{bandwidth::bw_125}; ///< bandwidth stored during init
 };
 
 // ---------------------------------------------------------------------------
@@ -167,7 +185,7 @@ void lora_demod_free(lora_demod_workspace* ws);
 // samples_per_symbol = 1 << sf
 size_t lora_modulate(const uint16_t* symbols, size_t symbol_count,
                      std::complex<float>* out_samples, unsigned sf, unsigned osr,
-                     float amplitude = 1.0f);
+                     bandwidth bw, float amplitude = 1.0f);
 
 // Demodulate complex samples into symbol indices using a prepared workspace.
 size_t lora_demodulate(lora_demod_workspace* ws,

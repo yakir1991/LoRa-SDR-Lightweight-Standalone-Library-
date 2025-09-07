@@ -16,7 +16,8 @@ int main() {
 
     {
         alloc_tracker::Guard guard;
-        lora_phy::lora_modulate(symbols.data(), symbol_count, samples.data(), sf, 1);
+        lora_phy::lora_modulate(symbols.data(), symbol_count, samples.data(), sf, 1,
+                                lora_phy::bandwidth::bw_125);
         if (guard.count() != 0) {
             std::cerr << "Allocation occurred in modulate" << std::endl;
             return 1;

@@ -13,7 +13,7 @@ namespace {
 
 void usage(const char* prog) {
     std::cerr << "Usage: " << prog
-              << " --payload=HEX [--sf=N] [--cr=N] [--out=FILE|--stdout]\n";
+              << " --payload=HEX [--sf=N] [--cr=N] [--bw=HZ] [--out=FILE|--stdout]\n";
 }
 
 bool parse_hex_payload(const std::string& hex, std::vector<uint8_t>& out) {
@@ -44,6 +44,18 @@ int main(int argc, char** argv) {
             params.sf = static_cast<unsigned>(std::stoul(arg.substr(5)));
         } else if (arg.rfind("--cr=", 0) == 0) {
             params.cr = static_cast<unsigned>(std::stoul(arg.substr(5)));
+        } else if (arg.rfind("--bw=", 0) == 0) {
+            unsigned val = static_cast<unsigned>(std::stoul(arg.substr(5)));
+            if (val == 125000)
+                params.bw = bandwidth::bw_125;
+            else if (val == 250000)
+                params.bw = bandwidth::bw_250;
+            else if (val == 500000)
+                params.bw = bandwidth::bw_500;
+            else {
+                std::cerr << "Unsupported bandwidth\n";
+                return 1;
+            }
         } else if (arg.rfind("--out=", 0) == 0) {
             out_path = arg.substr(6);
         } else if (arg == "--stdout") {
