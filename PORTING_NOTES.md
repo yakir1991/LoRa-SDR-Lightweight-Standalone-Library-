@@ -1,4 +1,8 @@
 # Porting Notes
+*Version:* 1.0  
+*Date:* 2025-02-14
+
+See also: [API Specification](API_SPEC.md), [Third-Party Components](THIRD_PARTY.md), [Test Plan](TEST_PLAN.md)
 
 This document summarizes core functions, dependencies, and allocation models for selected modules in the LoRa SDR lightweight library.
 

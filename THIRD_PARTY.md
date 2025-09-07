@@ -1,4 +1,8 @@
 # Third-Party Components
+*Version:* 1.0  
+*Date:* 2025-02-14
+
+See also: [API Specification](API_SPEC.md), [Porting Notes](PORTING_NOTES.md), [Test Plan](TEST_PLAN.md)
 
 This project incorporates external code and artifacts. The sections below credit their sources, summarize any local modifications, and provide reproduction instructions for generated vectors where applicable.
 
