@@ -77,7 +77,7 @@ int main() {
         std::vector<uint16_t> symbols(PAYLOAD_SIZE * 2);
         const size_t symbol_count = lora_phy::lora_encode(payload.data(), payload.size(), symbols.data(), p.sf);
         const size_t samples_per_symbol = 1u << p.sf;
-        const size_t sample_count = symbol_count * samples_per_symbol;
+        const size_t sample_count = (symbol_count + 2) * samples_per_symbol;
 
         std::vector<std::complex<float>> samples(sample_count);
         std::vector<std::complex<float>> dechirped(sample_count);
@@ -100,14 +100,16 @@ int main() {
         for (size_t pkt = 0; pkt < PACKETS; ++pkt) {
             lora_phy::lora_modulate(symbols.data(), symbol_count, samples.data(),
                                     p.sf, 1,
-                                    static_cast<lora_phy::bandwidth>(p.bw));
-            for (size_t s = 0; s < symbol_count; ++s) {
+                                    static_cast<lora_phy::bandwidth>(p.bw), 1.0f,
+                                    0x12);
+            for (size_t s = 0; s < symbol_count + 2; ++s) {
                 for (size_t i = 0; i < samples_per_symbol; ++i) {
                     dechirped[s * samples_per_symbol + i] =
                         samples[s * samples_per_symbol + i] * down[i];
                 }
             }
-            lora_phy::lora_demodulate(&ws, dechirped.data(), sample_count, demod.data(), 1);
+            lora_phy::lora_demodulate(&ws, dechirped.data(), sample_count,
+                                      demod.data(), 1, nullptr);
         }
 
         unsigned long long c_end = __rdtsc();

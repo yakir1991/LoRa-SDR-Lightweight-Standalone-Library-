@@ -71,10 +71,10 @@ int main() {
 
         // modulate symbols into IQ samples
         const size_t samples_per_symbol = 1u << p.sf;
-        const size_t sample_count = symbol_count * samples_per_symbol;
+        const size_t sample_count = (symbol_count + 2) * samples_per_symbol;
         std::vector<std::complex<float>> samples(sample_count);
         lora_phy::lora_modulate(symbols.data(), symbol_count, samples.data(), p.sf, 1,
-                                static_cast<lora_phy::bandwidth>(p.bw));
+                                static_cast<lora_phy::bandwidth>(p.bw), 1.0f, 0x12);
 
         // dechirp the samples before demodulation
         std::vector<std::complex<float>> dechirped(sample_count);
@@ -84,7 +84,7 @@ int main() {
         genChirp(down.data(), static_cast<int>(samples_per_symbol), 1,
                  static_cast<int>(samples_per_symbol), 0.0f, true, 1.0f, phase,
                  scale);
-        for (size_t s = 0; s < symbol_count; ++s) {
+        for (size_t s = 0; s < symbol_count + 2; ++s) {
             for (size_t i = 0; i < samples_per_symbol; ++i) {
                 dechirped[s * samples_per_symbol + i] =
                     samples[s * samples_per_symbol + i] * down[i];
@@ -95,7 +95,8 @@ int main() {
         std::vector<uint16_t> demod(symbol_count);
         lora_phy::lora_demod_workspace ws{};
         lora_phy::lora_demod_init(&ws, p.sf);
-        lora_phy::lora_demodulate(&ws, dechirped.data(), sample_count, demod.data(), 1);
+        lora_phy::lora_demodulate(&ws, dechirped.data(), sample_count, demod.data(), 1,
+                                   nullptr);
         lora_phy::lora_demod_free(&ws);
 
         // decode symbols back to bytes
