@@ -190,6 +190,9 @@ static inline void Sx1272ComputeWhiteningLfsr(uint8_t *buffer, uint16_t bufferSi
  */
 static inline unsigned short binaryToGray16(unsigned short num)
 {
+    // Bit 0 is the least significant bit of the binary word.  The
+    // reflected Gray code preserves this ordering with bit 15 as the MSB.
+    // The LSB is simply XOR'ed with the next more significant bit.
     return num ^ (num >> 1);
 }
 
@@ -198,6 +201,9 @@ static inline unsigned short binaryToGray16(unsigned short num)
  */
 static inline unsigned short grayToBinary16(unsigned short num)
 {
+    // Convert from Gray code back to binary.  The MSB is the same in both
+    // representations; the remaining bits propagate downwards from MSB to
+    // LSB.  Bit positions are numbered from LSB=0 to MSB=15.
     num = num ^ (num >> 8);
     num = num ^ (num >> 4);
     num = num ^ (num >> 2);
@@ -357,50 +363,60 @@ static inline unsigned char encodeParity64(const unsigned char b) {
 /***********************************************************************
  * Diagonal interleaver + deinterleaver
  **********************************************************************/
-static inline void diagonalInterleaveSx(const uint8_t *codewords, const size_t numCodewords, uint16_t *symbols, const size_t PPM, const size_t RDD){
-	for (size_t x = 0; x < numCodewords / PPM; x++)	{
-		const size_t cwOff = x*PPM;
-		const size_t symOff = x*(4 + RDD);
-		for (size_t k = 0; k < 4 + RDD; k++){
-			for (size_t m = 0; m < PPM; m++){
-				const size_t i = (m + k + PPM) % PPM;
-				const auto bit = (codewords[cwOff + i] >> k) & 0x1;
-				symbols[symOff + k] |= (bit << m);
-			}
-		}
-	}
+static inline void diagonalInterleaveSx(const uint8_t *codewords, const size_t numCodewords,
+                                        uint16_t *symbols, const size_t PPM, const size_t RDD){
+        // Bit numbering: bit 0 of a codeword is its least-significant bit and becomes
+        // bit 0 of the symbol. Higher bits follow in increasing significance.
+        for (size_t blk = 0; blk < numCodewords / PPM; ++blk) {
+                const size_t cwOff = blk * PPM;
+                const size_t symOff = blk * (4 + RDD);
+                for (size_t bit = 0; bit < 4 + RDD; ++bit) {
+                        uint16_t sym = 0;
+                        for (size_t cw = 0; cw < PPM; ++cw) {
+                                const size_t src = (cw + bit) % PPM;
+                                const uint8_t b = (codewords[cwOff + src] >> bit) & 0x1;
+                                sym |= static_cast<uint16_t>(b) << cw;
+                        }
+                        symbols[symOff + bit] = sym;
+                }
+        }
 }
 
-static inline void diagonalDeterleaveSx(const uint16_t *symbols, const size_t numSymbols, uint8_t *codewords, const size_t PPM, const size_t RDD)
+
+static inline void diagonalDeterleaveSx(const uint16_t *symbols, const size_t numSymbols,
+                                        uint8_t *codewords, const size_t PPM, const size_t RDD)
 {
-	for (size_t x = 0; x < numSymbols / (4 + RDD); x++)
-	{
-		const size_t cwOff = x*PPM;
-		const size_t symOff = x*(4 + RDD);
-		for (size_t k = 0; k < 4 + RDD; k++)
-		{
-			for (size_t m = 0; m < PPM; m++)
-			{
-				const size_t i = (m + k) % PPM;
-				const auto bit = (symbols[symOff + k] >> m) & 0x1;
-				codewords[cwOff + i] |= (bit << k);
-			}
-		}
-	}
+        // Inverse of diagonalInterleaveSx. Symbols use the same LSB-first bit ordering
+        // as codewords and must be zero-initialised by the caller.
+        for (size_t blk = 0; blk < numSymbols / (4 + RDD); ++blk) {
+                const size_t cwOff = blk * PPM;
+                const size_t symOff = blk * (4 + RDD);
+                for (size_t bit = 0; bit < 4 + RDD; ++bit) {
+                        uint16_t sym = symbols[symOff + bit];
+                        for (size_t cw = 0; cw < PPM; ++cw, sym >>= 1) {
+                                const size_t dst = (cw + bit) % PPM;
+                                codewords[cwOff + dst] |= (sym & 0x1) << bit;
+                        }
+                }
+        }
 }
 
-static inline void diagonalDeterleaveSx2(const uint16_t *symbols, const size_t numSymbols, uint8_t *codewords, const size_t PPM, const size_t RDD){
-	size_t nb = RDD + 4;
-	for (size_t x = 0; x < numSymbols / nb; x++) {
-		const size_t cwOff = x*PPM;
-		const size_t symOff = x*nb;
-		for (size_t m = 0; m < PPM; m++) {
-			size_t i = m;
-			auto sym = symbols[symOff + m];
-			for (size_t k = 0; k < PPM; k++, sym >>= 1) {
-				codewords[cwOff + i] |= (sym & 1) << m;
-				if (++i == PPM) i = 0;
-			}
-		}
-	}
+
+static inline void diagonalDeterleaveSx2(const uint16_t *symbols, const size_t numSymbols,
+                                        uint8_t *codewords, const size_t PPM, const size_t RDD){
+        // Optimised variant of the deinterleaver. Bit 0 of the symbol corresponds to the
+        // least-significant bit of the codeword.
+        size_t nb = RDD + 4;
+        for (size_t x = 0; x < numSymbols / nb; x++) {
+                const size_t cwOff = x*PPM;
+                const size_t symOff = x*nb;
+                for (size_t m = 0; m < PPM; m++) {
+                        size_t i = m;
+                        auto sym = symbols[symOff + m];
+                        for (size_t k = 0; k < PPM; k++, sym >>= 1) {
+                                codewords[cwOff + i] |= (sym & 1) << m;
+                                if (++i == PPM) i = 0;
+                        }
+                }
+        }
 }
