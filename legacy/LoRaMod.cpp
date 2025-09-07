@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
-#include "ChirpGenerator.hpp"
+#include <lora_phy/ChirpGenerator.hpp>
 #include <iostream>
 #include <complex>
 #include <cmath>

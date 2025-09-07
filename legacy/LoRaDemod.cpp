@@ -6,7 +6,7 @@
 #include <complex>
 #include <cstring>
 #include <cmath>
-#include "LoRaDetector.hpp"
+#include <lora_phy/LoRaDetector.hpp>
 
 /***********************************************************************
  * |PothosDoc LoRa Demod

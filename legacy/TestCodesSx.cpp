@@ -3,7 +3,7 @@
 
 #include <Pothos/Testing.hpp>
 #include <iostream>
-#include "LoRaCodes.hpp"
+#include <lora_phy/LoRaCodes.hpp>
 
 POTHOS_TEST_BLOCK("/lora/tests", test_hamming84_sx)
 {

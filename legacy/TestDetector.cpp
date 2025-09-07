@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Testing.hpp>
-#include "LoRaDetector.hpp"
-#include "ChirpGenerator.hpp"
+#include <lora_phy/LoRaDetector.hpp>
+#include <lora_phy/ChirpGenerator.hpp>
 #include <iostream>
 #include <vector>
 
