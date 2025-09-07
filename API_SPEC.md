@@ -22,6 +22,7 @@ struct lora_workspace {
 
     struct lora_metrics metrics; /* updated by processing functions */
     unsigned       osr;          /* oversampling ratio */
+    enum bandwidth bw;           /* operating bandwidth */
 };
 ```
 
@@ -34,11 +35,15 @@ All routines return `0` on success or a negative error code (`-EINVAL`,
 `-ERANGE`, …) on failure unless noted otherwise.  Output functions return the
 number of elements written when successful.
 
+The `bandwidth` enumeration defines the supported LoRa bandwidths and
+currently allows `bw_125` (125 kHz), `bw_250` (250 kHz) and `bw_500`
+(500 kHz).
+
 ### `int init(struct lora_workspace *ws, const struct lora_params *cfg);`
 Initializes the workspace for a given set of parameters.
 
 * `ws` – workspace to populate. Must reference valid buffers.
-* `cfg` – modulation and coding parameters (spread factor, coding rate, oversampling, etc.).
+* `cfg` – modulation and coding parameters (spread factor, bandwidth, coding rate, oversampling, etc.).
 * Returns `0` on success or `-EINVAL` if parameters are invalid.
 
 ### `void reset(struct lora_workspace *ws);`

@@ -49,6 +49,7 @@ class Manifest:
     seed: int
     bytes: int
     osr: int
+    bw: int
     files: List[FileRecord]
 
 
@@ -58,6 +59,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument("--bytes", type=int, default=16, help="Number of payload bytes")
     parser.add_argument("--osr", type=int, default=1, help="Oversampling ratio")
+    parser.add_argument("--bw", type=int, default=125000, help="LoRa bandwidth in Hz")
     parser.add_argument(
         "--out",
         required=True,
@@ -93,6 +95,7 @@ def main() -> None:
         f"--bytes={args.bytes}",
         f"--out={out_dir}",
         f"--osr={args.osr}",
+        f"--bw={args.bw}",
     ]
     if args.window != "none":
         cmd.append(f"--window={args.window}")
@@ -129,7 +132,7 @@ def main() -> None:
             continue
         files.append(FileRecord(path.name, compute_checksum(path)))
 
-    manifest = Manifest(args.sf, args.seed, args.bytes, args.osr, files)
+    manifest = Manifest(args.sf, args.seed, args.bytes, args.osr, args.bw, files)
     with (out_dir / "manifest.json").open("w") as handle:
         json.dump(asdict(manifest), handle, indent=2)
 

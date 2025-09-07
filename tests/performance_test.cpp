@@ -86,8 +86,10 @@ int main() {
         // precompute downchirp for dechirp
         std::vector<std::complex<float>> down(samples_per_symbol);
         float phase = 0.0f;
+        float scale = lora_phy::bw_scale(static_cast<lora_phy::bandwidth>(p.bw));
         genChirp(down.data(), static_cast<int>(samples_per_symbol), 1,
-                 static_cast<int>(samples_per_symbol), 0.0f, true, 1.0f, phase);
+                 static_cast<int>(samples_per_symbol), 0.0f, true, 1.0f, phase,
+                 scale);
 
         lora_phy::lora_demod_workspace ws{};
         lora_phy::lora_demod_init(&ws, p.sf);
@@ -96,7 +98,9 @@ int main() {
         unsigned long long c_start = __rdtsc();
 
         for (size_t pkt = 0; pkt < PACKETS; ++pkt) {
-            lora_phy::lora_modulate(symbols.data(), symbol_count, samples.data(), p.sf, 1);
+            lora_phy::lora_modulate(symbols.data(), symbol_count, samples.data(),
+                                    p.sf, 1,
+                                    static_cast<lora_phy::bandwidth>(p.bw));
             for (size_t s = 0; s < symbol_count; ++s) {
                 for (size_t i = 0; i < samples_per_symbol; ++i) {
                     dechirped[s * samples_per_symbol + i] =

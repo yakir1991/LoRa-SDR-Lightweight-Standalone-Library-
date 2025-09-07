@@ -2,13 +2,16 @@
 
 This document summarizes core functions, dependencies, and allocation models for selected modules in the LoRa SDR lightweight library.
 
+The PHY supports bandwidths of 125, 250 and 500 kHz selectable via the
+`bandwidth` enumeration in `lora_params`.
+
 | Module | Core Functions | Dependencies | Allocation Model | Notes |
 | --- | --- | --- | --- | --- |
 | `LoRaMod.cpp` | `LoRaMod::work` | Pothos framework (`Pothos::Block`, `Pothos::BufferChunk`, labels) | Uses `Pothos::BufferChunk` for payload; generates chirps in-place | Pothos block wrapper; no Poco/JSON |
 | `LoRaDemod.cpp` | `LoRaDemod::work` | Pothos framework, `LoRaDetector` (FFT via kissfft) | Output via `Pothos::BufferChunk`; uses `std::vector` for chirp tables | Pothos block wrapper; no Poco/JSON |
 | `LoRaEncoder.cpp` | `LoRaEncoder::work`, `encodeFec` | Pothos framework, `LoRaCodes.hpp` utilities | `std::vector` for data and symbols; output `Pothos::BufferChunk` | Pothos block wrapper; no Poco/JSON |
 | `LoRaDecoder.cpp` | `LoRaDecoder::work`, `drop` | Pothos framework, `LoRaCodes.hpp` | `std::vector` for buffers; output `Pothos::BufferChunk` | Pothos block wrapper; no Poco/JSON |
-| `ChirpGenerator.hpp` | `genChirp` | `<complex>`, `<cmath>` (includes `Pothos/Config.hpp` for macros) | Writes to caller-provided buffer; no dynamic allocation | Independent; remove Pothos include if unused |
+| `ChirpGenerator.hpp` | `genChirp` | `<complex>`, `<cmath>` (includes `Pothos/Config.hpp` for macros) | Writes to caller-provided buffer; no dynamic allocation | Supports bandwidth scaling via an extra parameter |
 | `LoRaDetector.hpp` | `feed`, `detect` | `kissfft.hh`, `<complex>` | Uses caller-provided FFT work buffers and plan | Independent; no external framework |
 | `LoRaCodes.hpp` | `sx1272DataChecksum`, `diagonalInterleaveSx`, `grayToBinary16`, `SX1232RadioComputeWhitening` | Standard library (`<cstdint>`) only | Operates on caller buffers; no dynamic allocation | Contains CRC, interleaving, Gray mapping, whitening |
 | `kissfft.hh` | `kissfft::transform` | `<complex>`, `<vector>` (optional `<alloca.h>`) | Twiddles and stage data allocated in constructor (init-only) | Standalone FFT backend |

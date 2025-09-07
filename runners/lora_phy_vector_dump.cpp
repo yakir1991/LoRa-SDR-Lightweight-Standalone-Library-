@@ -17,7 +17,7 @@ namespace {
 void usage(const char* prog) {
     std::cerr << "Usage: " << prog
               << " --out=DIR [--sf=N] [--bytes=N] [--seed=N] [--osr=N]"
-              << " [--dump=STAGE,...] [--window=hann]\n";
+              << " [--bw=HZ] [--dump=STAGE,...] [--window=hann]\n";
 }
 
 } // namespace
@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
     unsigned sf = 7;
     unsigned seed = 1;
     unsigned osr = 1;
+    bandwidth bw = bandwidth::bw_125;
     size_t byte_count = 16;
     std::string out_dir;
     std::set<std::string> dumps;
@@ -41,6 +42,18 @@ int main(int argc, char** argv) {
             byte_count = static_cast<size_t>(std::stoul(arg.substr(8)));
         } else if (arg.rfind("--osr=", 0) == 0) {
             osr = static_cast<unsigned>(std::stoul(arg.substr(6)));
+        } else if (arg.rfind("--bw=", 0) == 0) {
+            unsigned val = static_cast<unsigned>(std::stoul(arg.substr(5)));
+            if (val == 125000)
+                bw = bandwidth::bw_125;
+            else if (val == 250000)
+                bw = bandwidth::bw_250;
+            else if (val == 500000)
+                bw = bandwidth::bw_500;
+            else {
+                std::cerr << "Unsupported bandwidth: " << val << "\n";
+                return 1;
+            }
         } else if (arg.rfind("--out=", 0) == 0) {
             out_dir = arg.substr(6);
         } else if (arg.rfind("--dump=", 0) == 0) {
@@ -107,7 +120,7 @@ int main(int argc, char** argv) {
     ws.window = window.data();
     lora_params params{};
     params.sf = sf;
-    params.bw = 0;
+    params.bw = bw;
     params.cr = 0;
     params.osr = osr;
     params.window = win;

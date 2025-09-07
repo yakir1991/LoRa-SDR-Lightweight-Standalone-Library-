@@ -22,11 +22,11 @@
  */
 template <typename Type>
 int genChirp(std::complex<Type> *samps, int N, int osr, int NN, Type f0, bool down,
-             const Type ampl, Type &phaseAccum)
+             const Type ampl, Type &phaseAccum, Type bw_scale = Type(1))
 {
-    const Type fMin = -M_PI / osr;
-    const Type fMax = M_PI / osr;
-    const Type fStep = (2 * M_PI) / (N * osr * osr);
+    const Type fMin = -M_PI * bw_scale / osr;
+    const Type fMax = M_PI * bw_scale / osr;
+    const Type fStep = (2 * M_PI * bw_scale) / (N * osr * osr);
     float f = fMin + f0;
     int i;
     if (down) {
