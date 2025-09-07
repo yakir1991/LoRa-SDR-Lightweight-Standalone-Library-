@@ -73,7 +73,10 @@ size_t lora_demodulate(lora_demod_workspace* ws,
             }
             float p, pav, findex;
             size_t idx = ws->detector->detect(p, pav, findex);
-            if (p > best_p) {
+            if (p > best_p || (p == best_p && idx < best_idx)) {
+                // Select the lowest index on equal power to guarantee
+                // deterministic behaviour when multiple bins share the
+                // same magnitude.
                 best_p = p;
                 best_idx = idx;
                 best_fi = findex;
