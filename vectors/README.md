@@ -10,6 +10,12 @@ The script produces two subdirectories:
   implementation.
 * `lora_phy/` – vectors produced by this standalone library.
 
-Each run writes the raw data files alongside a `manifest.json` file with
-SHA256 checksums so changes can be detected without storing the binary
-files in the repository.
+Each run writes the base64-encoded `.b64` files alongside a `manifest.json`
+file with SHA256 checksums so changes can be detected without storing the
+binary files in the repository. The generation scripts output the data in
+base64 and delete the raw binary files once encoded. To recover a binary
+vector:
+
+```bash
+base64 --decode vectors/lorasdr/example.bin.b64 > example.bin
+```
