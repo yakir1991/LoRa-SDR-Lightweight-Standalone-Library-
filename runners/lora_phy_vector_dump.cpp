@@ -2,6 +2,7 @@
 #include <lora_phy/LoRaCodes.hpp>
 
 #include <complex>
+#include <cstdlib>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -13,6 +14,16 @@
 using namespace lora_phy;
 
 namespace {
+
+void encode_base64(const std::string& path) {
+    std::string cmd = "base64 \"" + path + "\" > \"" + path + ".b64\" && rm \"" +
+                      path + "\"";
+    int rc = std::system(cmd.c_str());
+    if (rc != 0) {
+        std::cerr << "Failed to base64 encode " << path << "\n";
+        std::exit(1);
+    }
+}
 
 void usage(const char* prog) {
     std::cerr << "Usage: " << prog
@@ -164,42 +175,56 @@ int main(int argc, char** argv) {
     std::ofstream f;
 
     if (dumps.count("payload")) {
-        f.open(out_dir + "/payload.bin", std::ios::binary);
+        std::string path = out_dir + "/payload.bin";
+        f.open(path, std::ios::binary);
         f.write(reinterpret_cast<const char*>(payload.data()), payload.size());
         f.close();
+        encode_base64(path);
     }
     if (dumps.count("pre_interleave")) {
-        f.open(out_dir + "/pre_interleave.csv");
+        std::string path = out_dir + "/pre_interleave.csv";
+        f.open(path);
         for (size_t i = 0; i < cw_count; ++i)
             f << static_cast<unsigned>(pre_interleave[i]) << "\n";
         f.close();
+        encode_base64(path);
     }
     if (dumps.count("post_interleave")) {
-        f.open(out_dir + "/post_interleave.csv");
+        std::string path = out_dir + "/post_interleave.csv";
+        f.open(path);
         for (size_t i = 0; i < symbol_count; ++i) f << post_interleave[i] << "\n";
         f.close();
+        encode_base64(path);
     }
     if (dumps.count("iq")) {
-        f.open(out_dir + "/iq_samples.csv");
+        std::string path = out_dir + "/iq_samples.csv";
+        f.open(path);
         for (ssize_t i = 0; i < sample_count; ++i)
             f << samples[i].real() << "," << samples[i].imag() << "\n";
         f.close();
+        encode_base64(path);
     }
     if (dumps.count("demod")) {
-        f.open(out_dir + "/demod_symbols.csv");
+        std::string path = out_dir + "/demod_symbols.csv";
+        f.open(path);
         for (size_t i = 0; i < symbol_count; ++i) f << demod[i] << "\n";
         f.close();
+        encode_base64(path);
     }
     if (dumps.count("deinterleave")) {
-        f.open(out_dir + "/deinterleave.csv");
+        std::string path = out_dir + "/deinterleave.csv";
+        f.open(path);
         for (size_t i = 0; i < cw_count; ++i)
             f << static_cast<unsigned>(deinterleave[i]) << "\n";
         f.close();
+        encode_base64(path);
     }
     if (dumps.count("decoded")) {
-        f.open(out_dir + "/decoded.bin", std::ios::binary);
+        std::string path = out_dir + "/decoded.bin";
+        f.open(path, std::ios::binary);
         f.write(reinterpret_cast<const char*>(decoded.data()), decoded.size());
         f.close();
+        encode_base64(path);
     }
 
     return 0;

@@ -1,0 +1,37 @@
+{
+  "sf": 7,
+  "seed": 1,
+  "bytes": 16,
+  "osr": 1,
+  "bw": 250000,
+  "files": [
+    {
+      "name": "decoded.bin.b64",
+      "sha256": "b687caae0454968ffd5acdffd64c4dcc750ba710af148e5c69c3afdaa25b21e5"
+    },
+    {
+      "name": "deinterleave.csv.b64",
+      "sha256": "a618841541d09e2b72e01db4b1f0c3b8b26ba3f1b49cfb295093f4553e0bd984"
+    },
+    {
+      "name": "demod_symbols.csv.b64",
+      "sha256": "cd3bbeb655d57880a5fdeeca58214e35915a675b500bf79ee97740099ac3606d"
+    },
+    {
+      "name": "iq_samples.csv.b64",
+      "sha256": "50b17a23baca049cd2e4feb11afa61fbe0d2c116a630e0838eaec12cbd35abca"
+    },
+    {
+      "name": "payload.bin.b64",
+      "sha256": "a0b500e6555dd050f7dab1400ef33a16414df4109736108953d07d5a0121521e"
+    },
+    {
+      "name": "post_interleave.csv.b64",
+      "sha256": "5c1c8dbe06035cb584b9a2f12748a00c3a1fca1bc4d7c91a722983f3b69dd4fa"
+    },
+    {
+      "name": "pre_interleave.csv.b64",
+      "sha256": "f3631d415b0700883882d68982693b93fbeb2c292a7bfcad1afb08e30cab4c2e"
+    }
+  ]
+}

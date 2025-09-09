@@ -9,6 +9,7 @@ with SHA256 checksums is written so downstream tests can verify the data.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -101,9 +102,10 @@ def main() -> None:
         cmd.append(f"--window={args.window}")
     run(cmd)
 
-    iq_path = out_dir / "iq_samples.csv"
+    iq_path = out_dir / "iq_samples.csv.b64"
     if (args.cfo_bins != 0.0 or args.time_offset != 0.0) and iq_path.is_file():
-        lines = iq_path.read_text().strip().splitlines()
+        text = base64.b64decode(iq_path.read_bytes()).decode().strip()
+        lines = text.splitlines()
         samples: List[complex] = []
         for line in lines:
             re, im = line.split(",")
@@ -121,15 +123,12 @@ def main() -> None:
             elif shift < 0:
                 shift = -shift
                 samples = [0j] * shift + samples[:-shift]
-        out_iq = out_dir / "iq_samples_offset.csv"
-        with out_iq.open("w") as handle:
-            for s in samples:
-                handle.write(f"{s.real},{s.imag}\n")
+        out_lines = "".join(f"{s.real},{s.imag}\n" for s in samples)
+        out_iq_b64 = out_dir / "iq_samples_offset.csv.b64"
+        out_iq_b64.write_bytes(base64.b64encode(out_lines.encode()))
 
     files: List[FileRecord] = []
-    for path in sorted(out_dir.glob("*")):
-        if path.name == "manifest.json":
-            continue
+    for path in sorted(out_dir.glob("*.b64")):
         files.append(FileRecord(path.name, compute_checksum(path)))
 
     manifest = Manifest(args.sf, args.seed, args.bytes, args.osr, args.bw, files)
