@@ -9,6 +9,7 @@ with SHA256 checksums is written so downstream tests can verify the data.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -130,7 +131,11 @@ def main() -> None:
     for path in sorted(out_dir.glob("*")):
         if path.name == "manifest.json":
             continue
-        files.append(FileRecord(path.name, compute_checksum(path)))
+        b64_path = path.with_suffix(path.suffix + ".b64")
+        with path.open("rb") as src, b64_path.open("wb") as dst:
+            base64.encode(src, dst)
+        path.unlink()
+        files.append(FileRecord(b64_path.name, compute_checksum(b64_path)))
 
     manifest = Manifest(args.sf, args.seed, args.bytes, args.osr, args.bw, files)
     with (out_dir / "manifest.json").open("w") as handle:

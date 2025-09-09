@@ -20,15 +20,16 @@ scripts/generate_vectors.sh vectors/my_run
 
 The script invokes `lora_phy_vector_dump` with typical parameters (SF7,
 16 payload bytes, seed 1) and writes the selected internal states to the
-provided directory.  Generated files include:
+provided directory as base64-encoded `.b64` files. Raw binaries are
+removed after encoding. Generated files include:
 
-* `payload.bin` – raw payload bytes
-* `pre_interleave.csv` – Hamming encoded codewords (decimal per line)
-* `post_interleave.csv` – symbols after the diagonal interleaver
-* `iq_samples.csv` – complex samples as `real,imag`
-* `demod_symbols.csv` – demodulated symbols
-* `deinterleave.csv` – codewords after deinterleaving
-* `decoded.bin` – final decoded payload
+* `payload.bin.b64` – base64-encoded payload bytes
+* `pre_interleave.csv.b64` – base64-encoded Hamming encoded codewords (decimal per line)
+* `post_interleave.csv.b64` – base64-encoded symbols after the diagonal interleaver
+* `iq_samples.csv.b64` – base64-encoded complex samples as `real,imag`
+* `demod_symbols.csv.b64` – base64-encoded demodulated symbols
+* `deinterleave.csv.b64` – base64-encoded codewords after deinterleaving
+* `decoded.bin.b64` – base64-encoded final decoded payload
 
 ## Running Tests
 Build the test executables:
