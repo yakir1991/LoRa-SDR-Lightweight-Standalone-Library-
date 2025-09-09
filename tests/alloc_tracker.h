@@ -29,20 +29,13 @@ struct Guard {
 
 inline void* operator new(std::size_t size) {
     alloc_tracker::counter().fetch_add(1, std::memory_order_relaxed);
-    if (void* p = std::malloc(size)) return p;
+    if (void* p = ::operator new(size, std::nothrow)) return p;
     throw std::bad_alloc();
-}
-
-inline void operator delete(void* ptr) noexcept {
-    std::free(ptr);
 }
 
 inline void* operator new[](std::size_t size) {
     alloc_tracker::counter().fetch_add(1, std::memory_order_relaxed);
-    if (void* p = std::malloc(size)) return p;
+    if (void* p = ::operator new[](size, std::nothrow)) return p;
     throw std::bad_alloc();
 }
 
-inline void operator delete[](void* ptr) noexcept {
-    std::free(ptr);
-}
