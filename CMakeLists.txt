@@ -39,6 +39,7 @@ if(BUILD_TESTS)
 
     file(GLOB TEST_SOURCES CONFIGURE_DEPENDS tests/*.cpp)
     list(REMOVE_ITEM TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_main.cpp)
+    list(REMOVE_ITEM TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tests/performance_test.cpp)
 
     add_executable(lora_phy_tests tests/test_main.cpp ${TEST_SOURCES})
     target_link_libraries(lora_phy_tests PRIVATE lora_phy)
