@@ -1,3 +1,0 @@
-src/phy/LoRaDemod.cpp:6:#include <new>
-src/phy/LoRaDemod.cpp:27:    ws->fft = new (ws->fft_buf) kissfft<float>(ws->fft_plan);
-src/phy/LoRaDemod.cpp:29:        new (ws->detector_buf) LoRaDetector<float>(ws->N, ws->fft_in, ws->fft_out, *ws->fft);

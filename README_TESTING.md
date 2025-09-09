@@ -11,25 +11,48 @@ Ensure the following tools and libraries are available before running the tests:
 * Generated reference vectors (see below) for the bit-exact regression test.
 
 ## Generating Reference Vectors
-Deterministic vectors are required for regression tests.  Generate them after
-building the project:
+Comprehensive test vectors have been extracted from the LoRa-SDR submodule and are available in the `vectors/` directory. These vectors have been validated against the original implementation.
+
+### Pre-generated Vectors
+The following vector sets are available and ready to use:
+
+* `vectors/lora_sdr_reference/` – Comprehensive test vectors (481 total)
+  * Hamming code tests (63 vectors)
+  * Interleaver tests (30 vectors) 
+  * Modulation tests (360 vectors)
+  * Detection tests (28 vectors)
+
+* `vectors/lora_sdr_extracted/` – Specific test vectors from LoRa-SDR test code (338 total)
+  * Hamming tests (144 vectors)
+  * Interleaver tests (30 vectors)
+  * Loopback tests (10 vectors)
+  * Encoder/decoder tests (150 vectors)
+  * Validation tests (4 vectors)
+
+### Generating Additional Vectors
+To generate additional test vectors for specific scenarios:
 
 ```bash
-scripts/generate_vectors.sh vectors/my_run
+# Extract comprehensive vectors from LoRa-SDR submodule
+python3 scripts/extract_lora_sdr_vectors.py
+
+# Extract specific test cases from LoRa-SDR test code
+python3 scripts/extract_specific_vectors.py
+
+# Generate vectors using the lightweight library (after building)
+python3 scripts/generate_lora_phy_vectors.py --sf 7 --out test_run
 ```
 
-The script invokes `lora_phy_vector_dump` with typical parameters (SF7,
-16 payload bytes, seed 1) and writes the selected internal states to the
-provided directory as base64-encoded `.b64` files. Raw binaries are
-removed after encoding. Generated files include:
+### Vector Validation
+All vectors are validated against the original LoRa-SDR implementation:
 
-* `payload.bin.b64` – base64-encoded payload bytes
-* `pre_interleave.csv.b64` – base64-encoded Hamming encoded codewords (decimal per line)
-* `post_interleave.csv.b64` – base64-encoded symbols after the diagonal interleaver
-* `iq_samples.csv.b64` – base64-encoded complex samples as `real,imag`
-* `demod_symbols.csv.b64` – base64-encoded demodulated symbols
-* `deinterleave.csv.b64` – base64-encoded codewords after deinterleaving
-* `decoded.bin.b64` – base64-encoded final decoded payload
+```bash
+# Validate against LoRa-SDR submodule
+python3 scripts/validate_vectors_with_sublmodule.py
+
+# Validate modulation vectors
+python3 scripts/validate_modulation_vectors.py
+```
 
 ## Running Tests
 Build the test executables:
