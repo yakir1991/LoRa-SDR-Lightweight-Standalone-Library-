@@ -449,7 +449,6 @@ This project is based on the original LoRa-SDR implementation by MyriadRF.
 ### Technology Credits
 - **Semtech**: LoRa technology and specifications
 - **KISS-FFT**: FFT library (included in original)
-- **LoRa Alliance**: LoRaWAN specifications
 
 ### Submodule Reference
 The original LoRa-SDR submodule is included for:
