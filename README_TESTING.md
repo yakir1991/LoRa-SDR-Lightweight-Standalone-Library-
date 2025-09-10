@@ -40,7 +40,10 @@ python3 scripts/extract_lora_sdr_vectors.py
 python3 scripts/extract_specific_vectors.py
 
 # Generate vectors using the lightweight library (after building)
-python3 scripts/generate_lora_phy_vectors.py --sf 7 --out test_run
+./build/generate_lora_phy_vectors --sf 7 --out test_run
+
+# Generate comprehensive reference vectors
+./build/generate_comprehensive_vectors --out vectors/lora_sdr_reference_cpp
 ```
 
 ### Vector Validation

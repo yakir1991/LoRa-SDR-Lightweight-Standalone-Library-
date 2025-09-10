@@ -30,6 +30,12 @@ if(BUILD_RUNNERS)
     add_executable(lora_phy_vector_dump runners/lora_phy_vector_dump.cpp)
     target_link_libraries(lora_phy_vector_dump PRIVATE lora_phy)
 
+    add_executable(generate_lora_phy_vectors runners/lora_phy_vector_generate.cpp)
+    target_link_libraries(generate_lora_phy_vectors PRIVATE lora_phy)
+
+    add_executable(generate_comprehensive_vectors runners/comprehensive_vector_generate.cpp)
+    target_link_libraries(generate_comprehensive_vectors PRIVATE lora_phy)
+
     # Transmit runner producing IQ samples from a hex payload
     add_executable(tx_runner runners/tx_runner.cpp)
     target_link_libraries(tx_runner PRIVATE lora_phy)
