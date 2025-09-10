@@ -20,12 +20,6 @@ target_include_directories(lora_phy PUBLIC include)
       ${CMAKE_CURRENT_SOURCE_DIR}/include/lora_phy/kissfft.hh
   )
 
-# LoRaWAN helper library
-file(GLOB LORAWAN_SOURCES CONFIGURE_DEPENDS src/lorawan/*.cpp)
-add_library(lorawan STATIC ${LORAWAN_SOURCES})
-target_link_libraries(lorawan PUBLIC lora_phy)
-target_include_directories(lorawan PUBLIC include)
-
 if(BUILD_RUNNERS)
     add_executable(lora_phy_vector_dump runners/lora_phy_vector_dump.cpp)
     target_link_libraries(lora_phy_vector_dump PRIVATE lora_phy)
