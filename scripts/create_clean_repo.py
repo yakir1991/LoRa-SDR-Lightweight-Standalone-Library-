@@ -340,7 +340,6 @@ See THIRD_PARTY.md for licensing details.
 
 - [LoRa-SDR Original Implementation](https://github.com/myriadrf/LoRa-SDR)
 - [KISS-FFT](https://github.com/mborgerding/kissfft)
-- [LoRaWAN Specification](https://lora-alliance.org/resource_hub/lorawan-specification-v1-0-3/)
 """
     
     with open(os.path.join(clean_repo_dir, "README.md"), 'w') as f:
