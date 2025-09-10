@@ -22,8 +22,7 @@ def create_clean_repo_structure():
     # Essential directories
     essential_dirs = [
         "src/phy",
-        "include/lora_phy", 
-        "include/lorawan",
+        "include/lora_phy",
         "runners",
         "tests",
         "scripts",
@@ -64,8 +63,7 @@ def copy_essential_files(clean_repo_dir):
         "src/phy/LoRaDemod.cpp", 
         "src/phy/LoRaEncoder.cpp",
         "src/phy/LoRaMod.cpp",
-        "src/phy/phy.cpp",
-        "src/lorawan/lorawan.cpp"
+        "src/phy/phy.cpp"
     ]
     
     for file_path in src_files:
@@ -81,8 +79,7 @@ def copy_essential_files(clean_repo_dir):
         "include/lora_phy/kissfft.hh",
         "include/lora_phy/LoRaCodes.hpp",
         "include/lora_phy/LoRaDetector.hpp",
-        "include/lora_phy/phy.hpp",
-        "include/lorawan/lorawan.hpp"
+        "include/lora_phy/phy.hpp"
     ]
     
     for file_path in header_files:
@@ -95,7 +92,6 @@ def copy_essential_files(clean_repo_dir):
     # Copy runner files
     runner_files = [
         "runners/lora_phy_vector_dump.cpp",
-        "runners/lorawan_roundtrip.cpp",
         "runners/rx_runner.cpp",
         "runners/tx_runner.cpp"
     ]
@@ -112,7 +108,6 @@ def copy_essential_files(clean_repo_dir):
         "tests/bit_exact_test.cpp",
         "tests/e2e_chain_test.cpp",
         "tests/equal_power_bin_test.cpp",
-        "tests/lorawan_roundtrip.py",
         "tests/no_alloc_test.cpp",
         "tests/performance_test.cpp",
         "tests/roundtrip_test.cpp",
