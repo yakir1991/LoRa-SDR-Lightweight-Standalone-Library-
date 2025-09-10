@@ -2,6 +2,11 @@
 
 This project will make use of SDR hardware to receive and decode Lora.
 
+**Scope:** This repository implements the LoRa physical layer (radio layer) only.
+It includes the modulator and demodulator, Gray coding and demapping,
+interleaving, Hamming code, PHY CRC, synchronization, and related blocks.
+Higher-layer protocols such as LoRaWAN are intentionally out of scope.
+
 * Blog: https://myriadrf.org/blog/lora-modem-limesdr/
 
 ## Repository layout
