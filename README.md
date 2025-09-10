@@ -66,11 +66,11 @@ vectors for testing.  After building the project with CMake, run:
 ```bash
 cmake -B build -S .
 cmake --build build
-python3 scripts/generate_lora_phy_vectors.py --sf 7 --seed 1 --out example
+./build/generate_lora_phy_vectors --sf 7 --seed 1 --out example
 ```
 
-The script invokes `build/lora_phy_vector_dump` and stores outputs under
-`vectors/lora_phy_baseline/example`.  A `manifest.json` containing
+The executable writes results under
+`vectors/lora_phy/example`.  A `manifest.json` containing
 SHA256 checksums is written so the vectors can be recreated locally.
 Generated `.bin` and `.csv` files are ignored by Git.
 
