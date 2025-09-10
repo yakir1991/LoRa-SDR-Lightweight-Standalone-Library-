@@ -63,6 +63,7 @@ if(BUILD_TESTS)
 
     add_executable(lora_phy_tests tests/test_main.cpp ${TEST_SOURCES})
     target_link_libraries(lora_phy_tests PRIVATE lora_phy)
+    target_include_directories(lora_phy_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/LoRa-SDR)
 
     foreach(test_src ${TEST_SOURCES})
         get_filename_component(test_name ${test_src} NAME_WE)
